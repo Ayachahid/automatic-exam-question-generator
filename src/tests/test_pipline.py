@@ -11,19 +11,13 @@ def main():
     file = "src/tests/data_tests/sample.txt"
 
     print("Creating pipeline...")
-    pipeline = QuestionGenerationPipline()
+    pipeline = QuestionGenerationPipline(file_path=file)
     print("Pipeline created.")
-    
-    print(f"Loading file: {file}")
-    pipeline.put_file_path(file)
-    print("File path set.")
-    
-    print("Running pipeline...")
-    questions = pipeline.run(file, question_type="multiple_choice", difficulty="easy", num_questions=2)
-    print(f"Generated {len(questions)} questions")
 
-    for i, q in enumerate(questions, 1):
-        print(f"Q{i}: {q}")
+    print("Running pipeline...")
+    questions = pipeline.run(question_type="short answer")
+    print(f"Generated questions:")
+    print(questions)
 
 if __name__ == '__main__':
     main()

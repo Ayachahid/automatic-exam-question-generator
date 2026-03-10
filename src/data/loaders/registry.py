@@ -4,9 +4,13 @@ from pathlib import Path
 
 class LoaderFactory:
     def get_loader(self, file_path: str) -> BaseLoader:
-        ext = Path(file_path).suffix.lower()
-        if ext == '.txt': return TXTLoader()
-        return None
-
+        return TXTLoader()
+    #     ext = Path(file_path).suffix.lower()
+    #     if ext == ".pdf":   return PDFLoader()
+    #     if ext == ".docx":  return DocxLoader()
+    #     if ext == ".pptx":  return PptxLoader()
+    #     if ext == ".txt":   return TxtLoader()
+    #     raise UnsupportedFormatError(ext)
+    
     def get_TXTLoader(self):
         return TXTLoader()
