@@ -6,7 +6,7 @@ from src.core.config import AppConfig, load_config
 
 class QuestionGenerationPipline:
     def __init__(self, config_path: str = "configs/config.yaml", file_path=None):
-        self.config = load_config(config_path)
+        self.config     = load_config(config_path)
         self.loader     = LoaderFactory()
         # self.cleaner  = TextCleaner()                     # TODO: add TextCleaner()
         self.chunker    = ChunkerFactory().get_chunker()    # TODO: add config.chunker
@@ -25,22 +25,26 @@ class QuestionGenerationPipline:
         if not file_path:
             raise ValueError("No file_path provided")
         
-        # all_questions = []
+        all_questions = []
         raw_text = self.loader.get_loader(file_path).load(file_path)
         # clean_text = self.cleaner.clean(raw_text) 
-        # chunks     = self.chunker.chunk(clean_text)
+        chunks = self.chunker.chunk(text=raw_text)
+        print(f"there are {len(chunks)} chunks") # print for DEBUG
+        for chunk in chunks:
+
 
         # TODO : working with chunks
 
-        prompt = self.prompter.build_prompt(
-            raw_text, # it should be chunks
-            question_type   = question_type if question_type is not None else self.config.generation.question_type,
-            difficulty      = difficulty    if difficulty    is not None else self.config.generation.difficulty,
-            num_questions   = num_questions if num_questions is not None else self.config.generation.num_questions
-        )
+            prompt = self.prompter.build_prompt(
+                raw_text, # it should be chunks
+                question_type   = question_type if question_type is not None else self.config.generation.question_type,
+                difficulty      = difficulty    if difficulty    is not None else self.config.generation.difficulty,
+                num_questions   = num_questions if num_questions is not None else self.config.generation.num_questions
+            )
 
-        raw_out = self.provider.generate(prompt)
+            provided_result = self.provider.generate(prompt)
+            all_questions.append(provided_result)
         # TODO : parser
-        # all_questions.extend(raw_out)
+        
 
-        return raw_out
+        return all_questions
