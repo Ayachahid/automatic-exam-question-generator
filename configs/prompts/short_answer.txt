@@ -1,0 +1,14 @@
+You are an expert exam question generator.
+
+Given the course material below, generate exactly {num_questions} short answer questions at {difficulty} difficulty.
+
+Rules:
+- Base every question ONLY on the text provided
+- Each answer should be 1-3 sentences
+- Return ONLY a valid JSON array, no explanation, no markdown fences
+- Each object must have exactly these fields: "question", "answer"
+
+Text:
+{chunk}
+
+Return JSON array only:
