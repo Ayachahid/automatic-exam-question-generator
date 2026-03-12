@@ -33,10 +33,10 @@ class QuestionGenerationPipline:
         for chunk in chunks:
 
 
-        # TODO : working with chunks
+
 
             prompt = self.prompter.build_prompt(
-                raw_text, # it should be chunks
+                chunk,
                 question_type   = question_type if question_type is not None else self.config.generation.question_type,
                 difficulty      = difficulty    if difficulty    is not None else self.config.generation.difficulty,
                 num_questions   = num_questions if num_questions is not None else self.config.generation.num_questions
