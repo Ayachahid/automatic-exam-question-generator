@@ -11,4 +11,4 @@ class DOCXLoader(BaseLoader):
             text.append(paragraph.text)
 
         return "\n".join(text)
-    
+        

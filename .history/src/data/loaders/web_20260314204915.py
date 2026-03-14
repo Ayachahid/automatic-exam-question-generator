@@ -1,3 +1,4 @@
+# src/data/loaders/web.py
 from .base import BaseLoader
 import requests
 from bs4 import BeautifulSoup

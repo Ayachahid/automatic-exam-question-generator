@@ -1,5 +1,5 @@
 from .base import BaseLoader
-import fitz  # pip install PyMuPDF
+import fitz  # pipPyMuPDF
 
 class PDFLoader(BaseLoader):
     def load(self, file_path):
