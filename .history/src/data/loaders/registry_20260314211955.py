@@ -2,7 +2,7 @@ from .base import BaseLoader
 from .txt import TXTLoader
 from .docx import DOCXLoader
 from .pdf import PDFLoader
-#from .pptx import PPTXLoader
+from .pptx import PPTXLoader
 from .web import WebLoader
 from pathlib import Path
 
