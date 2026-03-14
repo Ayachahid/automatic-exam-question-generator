@@ -1,0 +1,3 @@
+strategy: sentence
+max_sentences: 8
+min_sentences: 3

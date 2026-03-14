@@ -1,0 +1,4 @@
+strategy: semantic
+model: sentence-transformers/all-MiniLM-L6-v2
+similarity_threshold: 0.75
+max_chunk_tokens: 512

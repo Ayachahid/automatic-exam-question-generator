@@ -1,0 +1,6 @@
+strategy: hybrid
+semantic_model: sentence-transformers/all-MiniLM-L6-v2
+similarity_threshold: 0.75
+max_chunk_size: 1200
+min_chunk_size: 150
+overlap: 80
