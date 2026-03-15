@@ -38,6 +38,7 @@ class SentenceChunker(BaseChunker):
                 return nltk.sent_tokenize(text)
             except LookupError:
                 nltk.download("punkt", quiet=True)
+                nltk.download("punkt_tab", quiet=True)
                 return nltk.sent_tokenize(text)
         except ImportError:
             return self._simple_split(text)
