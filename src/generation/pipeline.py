@@ -1,5 +1,6 @@
 from src.data.loaders.registry import LoaderFactory
 from src.data.chunkers.registry import ChunkerFactory
+from src.data.cleaner import TextCleaner    
 from src.generation.prompter import Prompter
 from src.providers.ollama import OllamaProvider
 from src.core.config import AppConfig, load_config
@@ -8,7 +9,7 @@ class QuestionGenerationPipline:
     def __init__(self, config_path: str = "configs/config.yaml", file_path=None):
         self.config     = load_config(config_path)
         self.loader     = LoaderFactory()
-        # self.cleaner  = TextCleaner()                     # TODO: add TextCleaner()
+        self.cleaner  = TextCleaner()                     # TODO: add TextCleaner()
         self.chunker    = ChunkerFactory().get_chunker()    # TODO: add config.chunker
         self.prompter   = Prompter()
         self.provider   = OllamaProvider(
@@ -27,8 +28,8 @@ class QuestionGenerationPipline:
         
         all_questions = []
         raw_text = self.loader.get_loader(file_path).load(file_path)
-        # clean_text = self.cleaner.clean(raw_text) 
-        chunks = self.chunker.chunk(text=raw_text)
+        clean_text = self.cleaner.clean(raw_text)
+        chunks = self.chunker.chunk(text=clean_text)
         print(f"there are {len(chunks)} chunks") # print for DEBUG
         for chunk in chunks:
 

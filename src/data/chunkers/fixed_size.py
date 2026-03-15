@@ -1,6 +1,6 @@
-from .base import Basechunker
+from .base import BaseChunker
 
-class FixedSizeChunker(Basechunker):
+class FixedSizeChunker(BaseChunker):
     def __init__(self, chunk_size=1000, overlap=100):
         self.chunk_size = chunk_size
         self.overlap = overlap
