@@ -16,6 +16,10 @@ class EmptyDocumentError(ExamGeneratorError):
     def __init__(self, file_path: str):
         super().__init__(f"Le document '{file_path}' est vide ou illisible.")
 
+class FileReadError(ExamGeneratorError):        
+    def __init__(self, file_path: str, reason: str = ""):
+        super().__init__(f"Impossible de lire '{file_path}' : {reason}")
+
 class ProviderConnectionError(ExamGeneratorError):
     def __init__(self, provider: str, base_url: str):
         super().__init__(f"Connexion impossible à '{provider}' ({base_url}). Lance : ollama serve")
