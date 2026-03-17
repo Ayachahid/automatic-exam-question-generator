@@ -12,7 +12,7 @@ files = [
     r"src/tests/data_tests/example.txt",
     r"src/tests/data_tests/example.docx",
     r"src/tests/data_tests/example.pdf",
-    #r"src/tests/data_tests/example.pptx",
+    r"src/tests/data_tests/example.pptx",
     "http://example.com"
 ]
 
