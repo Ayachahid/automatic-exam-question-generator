@@ -5,7 +5,7 @@ from src.generation.prompter import Prompter
 from src.providers.ollama import OllamaProvider
 from src.core.config import AppConfig, load_config
 
-class QuestionGenerationPipline:
+class QuestionGenerationPipeline:
     def __init__(self, config_path: str = "configs/config.yaml", file_path=None):
         self.config     = load_config(config_path)
         self.loader     = LoaderFactory()
