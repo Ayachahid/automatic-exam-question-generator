@@ -1,4 +1,3 @@
-import json
 from fastapi import APIRouter, Depends, HTTPException, status
 from src.api.schemas.request import GenerateRequest
 from src.api.schemas.response import GenerationResponse, QuestionResponse
@@ -16,9 +15,9 @@ async def generate_questions(
     Generate exam questions based on the provided file or text.
     """
     try:
-        # call the pipeline
-        raw_results = pipeline.run(
+        questions_data = pipeline.run(
             file_path=request.file_path,
+            text=request.text,
             question_type=request.question_type.value,
             difficulty=request.difficulty.value,
             num_questions=request.num_questions
@@ -34,30 +33,13 @@ async def generate_questions(
             detail=f"Pipeline error: {str(e)}"
         )
 
+    # Map dictionaries to Pydantic models
     questions = []
-    for raw_json in raw_results:
+    for q_data in questions_data:
         try:
-            # The LLM might return markdown code fences like ```json ... ```
-            clean_json = raw_json.strip()
-            if clean_json.startswith("```json"):
-                clean_json = clean_json[7:]
-            if clean_json.endswith("```"):
-                clean_json = clean_json[:-3]
-            
-            parsed_data = json.loads(clean_json)
-            
-            # parsed_data should be a list of objects based on the prompt
-            if isinstance(parsed_data, list):
-                for q_data in parsed_data:
-                    questions.append(QuestionResponse(**q_data))
-            elif isinstance(parsed_data, dict):
-                questions.append(QuestionResponse(**parsed_data))
-                
-        except json.JSONDecodeError:
-            print(f"Failed to parse JSON: {raw_json}") # Log error but continue
-            continue
+            questions.append(QuestionResponse(**q_data))
         except Exception as e:
-             print(f"Validation error: {e}")
+             print(f"Validation error for question: {e}")
              continue
 
     return GenerationResponse(
