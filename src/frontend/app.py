@@ -207,10 +207,36 @@ if st.session_state.questions:
                             st.error(f"❌ Incorrect. The correct answer is: {answer_raw}")
                         else:
                             st.error(f"❌ Incorrect. The correct answer is: {answer_raw} ({correct_text})")
+
+            # Show Options for True/False
+            elif question_type == "true_false":
+                user_choice = st.radio(
+                    f"Select your answer for Q{i}:",
+                    options=["True", "False"],
+                    key=f"q{i}_choice_tf",
+                    index=None,
+                    horizontal=True
+                )
+                
+                if user_choice:
+                    # Robust normalization for True/False
+                    raw_ans = str(q["answer"]).strip().lower()
+                    
+                    if raw_ans in ["true", "1", "t", "yes"]:
+                        correct_answer_str = "True"
+                    elif raw_ans in ["false", "0", "f", "no"]:
+                        correct_answer_str = "False"
+                    else:
+                        correct_answer_str = str(q["answer"]).strip().capitalize()
+                    
+                    if user_choice == correct_answer_str:
+                        st.success("✨ Correct!")
+                    else:
+                        st.error(f"❌ Incorrect. The correct answer is: {correct_answer_str}")
             
             # Interactive Answer Reveal (for other types or additional info)
             with st.expander("See Explanation"):
-                if question_type != "multiple_choice":
+                if question_type not in ["multiple_choice", "true_false"]:
                     st.markdown(f"**Answer:**\n{q['answer']}")
                 
                 if q.get("explanation"):
