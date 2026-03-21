@@ -8,10 +8,9 @@ Rules:
 - Avoid yes/no questions — each question must demand a developed response
 - Return ONLY a valid JSON array, no explanation, no markdown fences
 - Each object must have exactly these fields:
-    "question"        : the essay question (clear and open-ended)
-    "suggested_answer": key points and ideas the answer should cover (2-4 sentences)
-    "grading_criteria": list of 3 criteria to evaluate the answer
-    "word_limit"      : suggested word count as an integer (150 for easy, 300 for medium, 500 for hard)
+    "question"   : the essay question (clear and open-ended)
+    "answer"     : key points and ideas the answer should cover (2-4 sentences)
+    "explanation": optional additional context or grading guidance for the question (can be null)
 
 Text:
 {chunk}
