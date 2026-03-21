@@ -3,7 +3,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.generation.pipeline import QuestionGenerationPipline
+from src.generation.pipeline import QuestionGenerationPipeline
 
 
 def main():
@@ -11,7 +11,7 @@ def main():
     question_types = ["true_false", "mcq", "short_answer", "essay", "scenario_based"]
 
     print("Creating pipeline...")
-    pipeline = QuestionGenerationPipline(file_path=file)
+    pipeline = QuestionGenerationPipeline(file_path=file)
     print("Pipeline created.")
 
     for q_type in question_types:

@@ -28,6 +28,10 @@ class QuestionGenerationPipeline:
             difficulty: Optional[str] = None,
             num_questions: Optional[int] = None) -> List[dict]:
         
+        question_type = question_type if question_type is not None else self.config.generation.question_type
+        difficulty    = difficulty    if difficulty    is not None else self.config.generation.difficulty
+        num_questions = num_questions if num_questions is not None else self.config.generation.num_questions
+        
         # Determine source content
         if file_path:
             raw_content = self.loader.get_loader(file_path).load(file_path)
@@ -62,7 +66,11 @@ class QuestionGenerationPipeline:
             )
 
             raw_output = self.provider.generate(prompt)
+            print(f"--- RAW OUTPUT chunk {i+1} ---")
+            print(raw_output[:300])
+            print("-------------------------------")
             parsed_questions = self.parser.parse(raw_output)
+            print(f"Parsed: {len(parsed_questions)} questions")
             
             # Only add what we need to reach the limit
             parsed_questions = parsed_questions[:remaining_questions]
