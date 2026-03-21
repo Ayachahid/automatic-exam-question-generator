@@ -60,6 +60,8 @@ if "file_path" not in st.session_state:
     st.session_state.file_path = None
 if "last_uploaded" not in st.session_state:
     st.session_state.last_uploaded = None
+if "gen_id" not in st.session_state:
+    st.session_state.gen_id = 0
 
 # --- Main Interface ---
 
@@ -110,6 +112,8 @@ st.divider()
 generate_btn = st.button("🚀 Generate Questions", type="primary", use_container_width=True)
 
 if generate_btn:
+    st.session_state.questions = [] # Clear old results immediately
+    st.session_state.gen_id += 1    # Force unique keys for new session
     payload = {}
     
     # Determine source
@@ -175,7 +179,7 @@ if st.session_state.questions:
                 user_choice = st.radio(
                     f"Select your answer for Q{i}:",
                     options=q["options"],
-                    key=f"q{i}_choice",
+                    key=f"q{i}_choice_{st.session_state.gen_id}",
                     index=None
                 )
                 
@@ -213,7 +217,7 @@ if st.session_state.questions:
                 user_choice = st.radio(
                     f"Select your answer for Q{i}:",
                     options=["True", "False"],
-                    key=f"q{i}_choice_tf",
+                    key=f"q{i}_choice_tf_{st.session_state.gen_id}",
                     index=None,
                     horizontal=True
                 )
