@@ -1,11 +1,9 @@
-from typing import Optional, Union
-from pydantic import BaseModel, Field
+from .base import BaseQuestion
 
-class TrueFalseQuestion(BaseModel):
+class TrueFalseQuestion(BaseQuestion):
     """
     Schema for True/False questions.
-    Matches the fields expected by the true_false prompt and QuestionResponse schema.
+    Inherits common fields from BaseQuestion.
     """
-    question: str = Field(..., description="The true/false statement")
-    answer: Union[str, bool, int] = Field(..., description="The correct answer (True or False)")
-    explanation: Optional[str] = Field(None, description="Explanation for why the answer is True or False")
+    # Uses question, answer, and explanation from BaseQuestion
+    pass
