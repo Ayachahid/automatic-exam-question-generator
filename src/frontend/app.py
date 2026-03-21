@@ -1,6 +1,7 @@
 import streamlit as st
 import httpx
 import json
+import re
 
 # API Configuration - Use 127.0.0.1 to avoid localhost resolution issues
 API_BASE_URL = "http://127.0.0.1:8000/api/v1"
@@ -133,7 +134,8 @@ if generate_btn:
             response = httpx.post(
                 f"{API_BASE_URL}/generate/",
                 json=payload,
-                timeout=600.0  # Increased timeout for complex generations
+                timeout=600.0,  # Increased timeout for complex generations
+                follow_redirects=True
             )
             
             if response.status_code == 404:
@@ -149,9 +151,15 @@ if generate_btn:
                 else:
                     st.success(f"✅ Generated {len(st.session_state.questions)} questions!")
         except httpx.HTTPStatusError as e:
-            st.error(f"❌ API Error: {e.response.text}")
+            st.error(f"❌ API Error ({e.response.status_code}): {e.response.text}")
+            try:
+                error_detail = e.response.json()
+                st.json(error_detail)
+            except:
+                pass
         except Exception as e:
             st.error(f"❌ Generation failed: {str(e)}")
+            st.exception(e)
 
 # --- Display Results ---
 if st.session_state.questions:
@@ -164,21 +172,45 @@ if st.session_state.questions:
             
             # Show Options for MCQs
             if q.get("options") and question_type == "multiple_choice":
-                # Use radio for display, disabled to act as a view-only list
-                st.radio(
-                    f"Options for Q{i}",
+                user_choice = st.radio(
+                    f"Select your answer for Q{i}:",
                     options=q["options"],
-                    key=f"q{i}_opts",
-                    index=None,
-                    disabled=True,
-                    label_visibility="collapsed"
+                    key=f"q{i}_choice",
+                    index=None
                 )
+                
+                if user_choice:
+                    # Logic to handle A/B/C/D answers from LLM
+                    # Normalize answer_raw: remove dots, parentheses, and whitespace
+                    answer_raw = str(q["answer"]).strip().upper()
+                    clean_answer = re.sub(r'[^A-D]', '', answer_raw) if len(answer_raw) <= 3 else ""
+                    
+                    correct_text = None
+                    
+                    # If it's a clear letter mapping (A, B, C, or D)
+                    if len(clean_answer) == 1 and clean_answer in "ABCD":
+                        index = ord(clean_answer) - ord("A")
+                        if 0 <= index < len(q["options"]):
+                            correct_text = q["options"][index]
+                    
+                    # If mapping failed or answer is likely full text
+                    if not correct_text:
+                        correct_text = str(q["answer"])
+
+                    is_correct = str(user_choice).strip().lower() == str(correct_text).strip().lower()
+                    
+                    if is_correct:
+                        st.success(f"✨ Correct! (Answer: {answer_raw})")
+                    else:
+                        # Avoid showing (D) (D) if they are identical
+                        if str(answer_raw).strip() == str(correct_text).strip():
+                            st.error(f"❌ Incorrect. The correct answer is: {answer_raw}")
+                        else:
+                            st.error(f"❌ Incorrect. The correct answer is: {answer_raw} ({correct_text})")
             
-            # Interactive Answer Reveal
-            with st.expander("Show Answer"):
-                if question_type == "multiple_choice":
-                    st.markdown(f"**Correct Answer:** `{q['answer']}`")
-                else:
+            # Interactive Answer Reveal (for other types or additional info)
+            with st.expander("See Explanation"):
+                if question_type != "multiple_choice":
                     st.markdown(f"**Answer:**\n{q['answer']}")
                 
                 if q.get("explanation"):

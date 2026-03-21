@@ -43,16 +43,30 @@ class QuestionGenerationPipeline:
         print(f"Processing {len(chunks)} chunks...") # Debug print
 
         all_parsed_questions = []
-        for chunk in chunks:
+        num_chunks = len(chunks)
+        questions_per_chunk = max(1, num_questions // num_chunks)
+        remaining_questions = num_questions
+        
+        for i, chunk in enumerate(chunks):
+            if remaining_questions <= 0:
+                break
+                
+            # For the last chunk, take all remaining needed questions
+            current_num = remaining_questions if i == num_chunks - 1 else questions_per_chunk
+            
             prompt = self.prompter.build_prompt(
                 chunk,
                 question_type   = question_type if question_type is not None else self.config.generation.question_type,
                 difficulty      = difficulty    if difficulty    is not None else self.config.generation.difficulty,
-                num_questions   = num_questions if num_questions is not None else self.config.generation.num_questions
+                num_questions   = current_num
             )
 
             raw_output = self.provider.generate(prompt)
             parsed_questions = self.parser.parse(raw_output)
+            
+            # Only add what we need to reach the limit
+            parsed_questions = parsed_questions[:remaining_questions]
             all_parsed_questions.extend(parsed_questions)
+            remaining_questions -= len(parsed_questions)
         
-        return all_parsed_questions
+        return all_parsed_questions[:num_questions]

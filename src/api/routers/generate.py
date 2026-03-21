@@ -22,10 +22,10 @@ async def generate_questions(
             difficulty=request.difficulty.value,
             num_questions=request.num_questions
         )
-    except FileNotFoundError:
+    except FileNotFoundError as e:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail=f"File not found: {request.file_path}"
+            detail=str(e)
         )
     except Exception as e:
         raise HTTPException(
