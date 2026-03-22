@@ -24,7 +24,10 @@ class SentenceChunker(BaseChunker):
             current.append(sentence)
             if len(current) >= self.max_sentences:
                 chunks.append(" ".join(current))
-                current = current[-self.min_sentences:]
+                if self.min_sentences > 0:
+                    current = current[-self.min_sentences:]
+                else:
+                    current = []
 
         if current:
             chunks.append(" ".join(current))
