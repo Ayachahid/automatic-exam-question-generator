@@ -4,8 +4,8 @@ from src.data.chunkers.registry import ChunkerFactory
 from src.data.cleaner import TextCleaner    
 from src.generation.prompter import Prompter
 from src.generation.parser import QuestionParser
-from src.providers.ollama import OllamaProvider
-from src.core.config import AppConfig, load_config
+from src.core.config import load_config
+from src.providers.registry import ProviderFactory
 
 class QuestionGenerationPipeline:
     def __init__(self, config_path: str = "configs/config.yaml", file_path: Optional[str] = None):
@@ -15,9 +15,10 @@ class QuestionGenerationPipeline:
         self.chunker    = ChunkerFactory().get_chunker()
         self.prompter   = Prompter()
         self.parser     = QuestionParser()
-        self.provider   = OllamaProvider(
-            base_url=self.config.model.base_url,
-            model=self.config.model.name
+        self.provider   = ProviderFactory().get_provider(
+            provider_name = self.config.model.provider,
+            base_url      = self.config.model.base_url,
+            model         = self.config.model.name
         )
         self.file_path = file_path
 
@@ -27,10 +28,6 @@ class QuestionGenerationPipeline:
             question_type: Optional[str] = None,
             difficulty: Optional[str] = None,
             num_questions: Optional[int] = None) -> List[dict]:
-        
-        question_type = question_type if question_type is not None else self.config.generation.question_type
-        difficulty    = difficulty    if difficulty    is not None else self.config.generation.difficulty
-        num_questions = num_questions if num_questions is not None else self.config.generation.num_questions
         
         # Determine source content
         if file_path:
@@ -66,11 +63,7 @@ class QuestionGenerationPipeline:
             )
 
             raw_output = self.provider.generate(prompt)
-            print(f"--- RAW OUTPUT chunk {i+1} ---")
-            print(raw_output[:300])
-            print("-------------------------------")
             parsed_questions = self.parser.parse(raw_output)
-            print(f"Parsed: {len(parsed_questions)} questions")
             
             # Only add what we need to reach the limit
             parsed_questions = parsed_questions[:remaining_questions]
