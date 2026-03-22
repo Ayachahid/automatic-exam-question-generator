@@ -6,10 +6,11 @@ from src.api.dependencies import get_pipeline
 
 router = APIRouter()
 
+
 @router.post("/", response_model=GenerationResponse)
 async def generate_questions(
     request: GenerateRequest,
-    pipeline: QuestionGenerationPipeline = Depends(get_pipeline)
+    pipeline: QuestionGenerationPipeline = Depends(get_pipeline),
 ):
     """
     Generate exam questions based on the provided file or text.
@@ -20,17 +21,14 @@ async def generate_questions(
             text=request.text,
             question_type=request.question_type.value,
             difficulty=request.difficulty.value,
-            num_questions=request.num_questions
+            num_questions=request.num_questions,
         )
     except FileNotFoundError as e:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail=str(e)
-        )
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Pipeline error: {str(e)}"
+            detail=f"Pipeline error: {str(e)}",
         )
 
     # Map dictionaries to Pydantic models
@@ -39,10 +37,7 @@ async def generate_questions(
         try:
             questions.append(QuestionResponse(**q_data))
         except Exception as e:
-             print(f"Validation error for question: {e}")
-             continue
+            print(f"Validation error for question: {e}")
+            continue
 
-    return GenerationResponse(
-        questions=questions,
-        total=len(questions)
-    )
+    return GenerationResponse(questions=questions, total=len(questions))

@@ -1,8 +1,13 @@
 import pytest
 import yaml
 import os
-from unittest.mock import patch, mock_open
-from src.core.config import load_config, AppConfig, ModelConfig, ChunkerConfig, GenerationConfig
+from src.core.config import (
+    load_config,
+    AppConfig,
+    ModelConfig,
+    ChunkerConfig,
+    GenerationConfig,
+)
 
 
 class TestConfigDataClasses:
@@ -11,9 +16,7 @@ class TestConfigDataClasses:
     def test_model_config(self):
         """Test ModelConfig dataclass."""
         config = ModelConfig(
-            provider="ollama",
-            name="llama3.2:1b",
-            base_url="http://localhost:11434"
+            provider="ollama", name="llama3.2:1b", base_url="http://localhost:11434"
         )
 
         assert config.provider == "ollama"
@@ -22,11 +25,7 @@ class TestConfigDataClasses:
 
     def test_chunker_config(self):
         """Test ChunkerConfig dataclass."""
-        config = ChunkerConfig(
-            strategy="fixed_size",
-            chunk_size=1000,
-            overlap=100
-        )
+        config = ChunkerConfig(strategy="fixed_size", chunk_size=1000, overlap=100)
 
         assert config.strategy == "fixed_size"
         assert config.chunk_size == 1000
@@ -35,9 +34,7 @@ class TestConfigDataClasses:
     def test_generation_config(self):
         """Test GenerationConfig dataclass."""
         config = GenerationConfig(
-            question_type="short_answer",
-            difficulty="medium",
-            num_questions=5
+            question_type="short_answer", difficulty="medium", num_questions=5
         )
 
         assert config.question_type == "short_answer"
@@ -51,9 +48,7 @@ class TestConfigDataClasses:
         generation_config = GenerationConfig("mcq", "easy", 10)
 
         app_config = AppConfig(
-            model=model_config,
-            chunker=chunker_config,
-            generation=generation_config
+            model=model_config, chunker=chunker_config, generation=generation_config
         )
 
         assert app_config.model.provider == "ollama"

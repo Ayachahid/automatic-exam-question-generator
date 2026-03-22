@@ -16,7 +16,7 @@ class TestPrompter:
             chunk=chunk,
             question_type="short_answer",
             difficulty="medium",
-            num_questions=3
+            num_questions=3,
         )
 
         assert "Deep Learning" in prompt
@@ -30,7 +30,7 @@ class TestPrompter:
             chunk=chunk,
             question_type="multiple_choice",
             difficulty="easy",
-            num_questions=5
+            num_questions=5,
         )
 
         assert "Python" in prompt
@@ -41,10 +41,7 @@ class TestPrompter:
         """Test building prompt for true/false questions."""
         chunk = "The sky is blue."
         prompt = self.prompter.build_prompt(
-            chunk=chunk,
-            question_type="true_false",
-            difficulty="easy",
-            num_questions=10
+            chunk=chunk, question_type="true_false", difficulty="easy", num_questions=10
         )
 
         assert "sky" in prompt
@@ -54,10 +51,7 @@ class TestPrompter:
         """Test building prompt for essay questions."""
         chunk = "Climate change affects the environment."
         prompt = self.prompter.build_prompt(
-            chunk=chunk,
-            question_type="essay",
-            difficulty="hard",
-            num_questions=2
+            chunk=chunk, question_type="essay", difficulty="hard", num_questions=2
         )
 
         assert "Climate change" in prompt
@@ -70,7 +64,7 @@ class TestPrompter:
             chunk=chunk,
             question_type="scenario_based",
             difficulty="hard",
-            num_questions=1
+            num_questions=1,
         )
 
         assert "patient" in prompt
@@ -85,7 +79,7 @@ class TestPrompter:
                 chunk=chunk,
                 question_type="unknown_type",
                 difficulty="medium",
-                num_questions=1
+                num_questions=1,
             )
 
     def test_build_prompt_preserves_chunk(self):
@@ -95,7 +89,7 @@ class TestPrompter:
             chunk=chunk,
             question_type="short_answer",
             difficulty="medium",
-            num_questions=1
+            num_questions=1,
         )
 
         assert chunk in prompt
@@ -107,7 +101,7 @@ class TestPrompter:
             chunk=chunk,
             question_type="short_answer",
             difficulty="hard",
-            num_questions=7
+            num_questions=7,
         )
 
         assert "hard" in prompt
@@ -122,7 +116,7 @@ class TestPrompter:
             chunk=chunk,
             question_type="short_answer",
             difficulty="medium",
-            num_questions=1
+            num_questions=1,
         )
 
         # Template should now be cached
@@ -133,7 +127,7 @@ class TestPrompter:
             chunk=chunk,
             question_type="short_answer",
             difficulty="easy",
-            num_questions=2
+            num_questions=2,
         )
 
         assert "easy" in prompt2
@@ -146,10 +140,13 @@ class TestPrompter:
             chunk=chunk,
             question_type="Scenario Based",
             difficulty="medium",
-            num_questions=1
+            num_questions=1,
         )
 
-        assert "Scenario Based".lower().replace(" ", "_") in prompt or "scenario" in prompt.lower()
+        assert (
+            "Scenario Based".lower().replace(" ", "_") in prompt
+            or "scenario" in prompt.lower()
+        )
 
     def test_build_prompt_question_type_uppercase(self):
         """Test handling of uppercase question types."""
@@ -158,7 +155,7 @@ class TestPrompter:
             chunk=chunk,
             question_type="SHORT_ANSWER",
             difficulty="medium",
-            num_questions=1
+            num_questions=1,
         )
 
         # The prompt should contain "short answer" (lowercase from template)
@@ -173,14 +170,14 @@ class TestPrompter:
             chunk=chunk1,
             question_type="short_answer",
             difficulty="easy",
-            num_questions=1
+            num_questions=1,
         )
 
         prompt2 = self.prompter.build_prompt(
             chunk=chunk2,
             question_type="short_answer",
             difficulty="hard",
-            num_questions=5
+            num_questions=5,
         )
 
         assert "First chunk." in prompt1

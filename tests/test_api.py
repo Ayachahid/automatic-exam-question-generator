@@ -1,8 +1,7 @@
 import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 from fastapi.testclient import TestClient
 from src.api.main import app
-from src.api.schemas.request import QuestionType, Difficulty
 from src.api.dependencies import get_pipeline
 
 
@@ -55,8 +54,7 @@ class TestUploadEndpoint:
 
         with open(test_file, "rb") as f:
             response = client.post(
-                "/api/v1/upload/",
-                files={"file": ("test.txt", f, "text/plain")}
+                "/api/v1/upload/", files={"file": ("test.txt", f, "text/plain")}
             )
 
         assert response.status_code == 201
@@ -73,8 +71,7 @@ class TestUploadEndpoint:
 
         with open(test_file, "rb") as f:
             response = client.post(
-                "/api/v1/upload/",
-                files={"file": ("test.pdf", f, "application/pdf")}
+                "/api/v1/upload/", files={"file": ("test.pdf", f, "application/pdf")}
             )
 
         assert response.status_code == 201
@@ -89,7 +86,13 @@ class TestUploadEndpoint:
         with open(test_file, "rb") as f:
             response = client.post(
                 "/api/v1/upload/",
-                files={"file": ("test.docx", f, "application/vnd.openxmlformats-officedocument.wordprocessingml.document")}
+                files={
+                    "file": (
+                        "test.docx",
+                        f,
+                        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+                    )
+                },
             )
 
         assert response.status_code == 201
@@ -104,7 +107,7 @@ class TestUploadEndpoint:
         with open(test_file, "rb") as f:
             response = client.post(
                 "/api/v1/upload/",
-                files={"file": ("test.xyz", f, "application/octet-stream")}
+                files={"file": ("test.xyz", f, "application/octet-stream")},
             )
 
         assert response.status_code == 400
@@ -121,14 +124,12 @@ class TestUploadEndpoint:
 
         with open(test_file1, "rb") as f1:
             response1 = client.post(
-                "/api/v1/upload/",
-                files={"file": ("test1.txt", f1, "text/plain")}
+                "/api/v1/upload/", files={"file": ("test1.txt", f1, "text/plain")}
             )
 
         with open(test_file2, "rb") as f2:
             response2 = client.post(
-                "/api/v1/upload/",
-                files={"file": ("test2.txt", f2, "text/plain")}
+                "/api/v1/upload/", files={"file": ("test2.txt", f2, "text/plain")}
             )
 
         assert response1.json()["file_id"] != response2.json()["file_id"]
@@ -140,8 +141,7 @@ class TestUploadEndpoint:
 
         with open(test_file, "rb") as f:
             response = client.post(
-                "/api/v1/upload/",
-                files={"file": ("test.txt", f, "text/plain")}
+                "/api/v1/upload/", files={"file": ("test.txt", f, "text/plain")}
             )
 
         data = response.json()
@@ -155,9 +155,7 @@ class TestGenerateEndpoint:
 
     def test_generate_from_text(self, client, mock_pipeline):
         """Test generating questions from text input."""
-        mock_pipeline.run.return_value = [
-            {"question": "Q1?", "answer": "A1"}
-        ]
+        mock_pipeline.run.return_value = [{"question": "Q1?", "answer": "A1"}]
 
         response = client.post(
             "/api/v1/generate/",
@@ -165,8 +163,8 @@ class TestGenerateEndpoint:
                 "text": "Test content",
                 "question_type": "short_answer",
                 "difficulty": "medium",
-                "num_questions": 1
-            }
+                "num_questions": 1,
+            },
         )
 
         assert response.status_code == 200
@@ -186,8 +184,8 @@ class TestGenerateEndpoint:
                 "file_path": "data/raw/test.txt",
                 "question_type": "multiple_choice",
                 "difficulty": "easy",
-                "num_questions": 5
-            }
+                "num_questions": 5,
+            },
         )
 
         assert response.status_code == 200
@@ -196,17 +194,14 @@ class TestGenerateEndpoint:
             text=None,
             question_type="multiple_choice",
             difficulty="easy",
-            num_questions=5
+            num_questions=5,
         )
 
     def test_generate_default_values(self, client, mock_pipeline):
         """Test default values for generation parameters."""
         mock_pipeline.run.return_value = []
 
-        response = client.post(
-            "/api/v1/generate/",
-            json={"text": "Test content"}
-        )
+        response = client.post("/api/v1/generate/", json={"text": "Test content"})
 
         assert response.status_code == 200
         mock_pipeline.run.assert_called_with(
@@ -214,7 +209,7 @@ class TestGenerateEndpoint:
             text="Test content",
             question_type="multiple_choice",  # Default
             difficulty="medium",  # Default
-            num_questions=5  # Default
+            num_questions=5,  # Default
         )
 
     def test_generate_file_not_found(self, client, mock_pipeline):
@@ -222,8 +217,7 @@ class TestGenerateEndpoint:
         mock_pipeline.run.side_effect = FileNotFoundError("File not found")
 
         response = client.post(
-            "/api/v1/generate/",
-            json={"file_path": "nonexistent.txt", "text": None}
+            "/api/v1/generate/", json={"file_path": "nonexistent.txt", "text": None}
         )
 
         assert response.status_code == 404
@@ -232,10 +226,7 @@ class TestGenerateEndpoint:
         """Test 500 on pipeline error."""
         mock_pipeline.run.side_effect = Exception("Pipeline failed")
 
-        response = client.post(
-            "/api/v1/generate/",
-            json={"text": "Test content"}
-        )
+        response = client.post("/api/v1/generate/", json={"text": "Test content"})
 
         assert response.status_code == 500
         data = response.json()
@@ -243,21 +234,14 @@ class TestGenerateEndpoint:
 
     def test_generate_no_input_source(self, client, mock_pipeline):
         """Test validation error when no input source."""
-        response = client.post(
-            "/api/v1/generate/",
-            json={}
-        )
+        response = client.post("/api/v1/generate/", json={})
 
         assert response.status_code == 422  # Validation error
 
     def test_generate_both_inputs(self, client, mock_pipeline):
         """Test validation error when both inputs provided."""
         response = client.post(
-            "/api/v1/generate/",
-            json={
-                "file_path": "test.txt",
-                "text": "Some text"
-            }
+            "/api/v1/generate/", json={"file_path": "test.txt", "text": "Some text"}
         )
 
         assert response.status_code == 422  # Validation error
@@ -269,11 +253,7 @@ class TestGenerateEndpoint:
         for q_type in ["multiple_choice", "short_answer", "true_false", "essay"]:
             response = client.post(
                 "/api/v1/generate/",
-                json={
-                    "text": "Test",
-                    "question_type": q_type,
-                    "num_questions": 1
-                }
+                json={"text": "Test", "question_type": q_type, "num_questions": 1},
             )
             assert response.status_code == 200
 
@@ -284,11 +264,7 @@ class TestGenerateEndpoint:
         for diff in ["easy", "medium", "hard"]:
             response = client.post(
                 "/api/v1/generate/",
-                json={
-                    "text": "Test",
-                    "difficulty": diff,
-                    "num_questions": 1
-                }
+                json={"text": "Test", "difficulty": diff, "num_questions": 1},
             )
             assert response.status_code == 200
 
@@ -298,29 +274,25 @@ class TestGenerateEndpoint:
 
         # Valid: minimum
         response = client.post(
-            "/api/v1/generate/",
-            json={"text": "Test", "num_questions": 1}
+            "/api/v1/generate/", json={"text": "Test", "num_questions": 1}
         )
         assert response.status_code == 200
 
         # Valid: maximum
         response = client.post(
-            "/api/v1/generate/",
-            json={"text": "Test", "num_questions": 50}
+            "/api/v1/generate/", json={"text": "Test", "num_questions": 50}
         )
         assert response.status_code == 200
 
         # Invalid: below minimum
         response = client.post(
-            "/api/v1/generate/",
-            json={"text": "Test", "num_questions": 0}
+            "/api/v1/generate/", json={"text": "Test", "num_questions": 0}
         )
         assert response.status_code == 422
 
         # Invalid: above maximum
         response = client.post(
-            "/api/v1/generate/",
-            json={"text": "Test", "num_questions": 51}
+            "/api/v1/generate/", json={"text": "Test", "num_questions": 51}
         )
         assert response.status_code == 422
 
@@ -331,13 +303,12 @@ class TestGenerateEndpoint:
                 "question": "What is AI?",
                 "answer": "Artificial Intelligence",
                 "options": ["ML", "AI", "DL"],
-                "explanation": "AI stands for Artificial Intelligence"
+                "explanation": "AI stands for Artificial Intelligence",
             }
         ]
 
         response = client.post(
-            "/api/v1/generate/",
-            json={"text": "Test", "num_questions": 1}
+            "/api/v1/generate/", json={"text": "Test", "num_questions": 1}
         )
 
         data = response.json()
@@ -362,21 +333,17 @@ class TestAPIIntegration:
 
         with open(test_file, "rb") as f:
             upload_response = client.post(
-                "/api/v1/upload/",
-                files={"file": ("course.txt", f, "text/plain")}
+                "/api/v1/upload/", files={"file": ("course.txt", f, "text/plain")}
             )
 
         assert upload_response.status_code == 201
         file_path = upload_response.json()["file_path"]
 
         # Generate
-        mock_pipeline.run.return_value = [
-            {"question": "Q about DL?", "answer": "A"}
-        ]
+        mock_pipeline.run.return_value = [{"question": "Q about DL?", "answer": "A"}]
 
         generate_response = client.post(
-            "/api/v1/generate/",
-            json={"file_path": file_path, "num_questions": 1}
+            "/api/v1/generate/", json={"file_path": file_path, "num_questions": 1}
         )
 
         assert generate_response.status_code == 200

@@ -6,7 +6,11 @@ from src.data.loaders.pdf import PDFLoader
 from src.data.loaders.docx import DOCXLoader
 from src.data.loaders.pptx import PPTXLoader
 from src.data.loaders.web import WebLoader
-from src.core.exceptions import UnsupportedFormatError, FileReadError, EmptyDocumentError
+from src.core.exceptions import (
+    UnsupportedFormatError,
+    FileReadError,
+    EmptyDocumentError,
+)
 
 
 class TestLoaderFactory:
@@ -380,7 +384,9 @@ class TestWebLoader:
     def test_web_loader_removes_script_style(self, mock_bs, mock_get):
         """Test that script and style tags are removed."""
         mock_response = MagicMock()
-        mock_response.text = "<html><body><script>alert('x');</script><p>Content</p></body></html>"
+        mock_response.text = (
+            "<html><body><script>alert('x');</script><p>Content</p></body></html>"
+        )
         mock_response.raise_for_status.return_value = None
         mock_get.return_value = mock_response
 
@@ -390,6 +396,7 @@ class TestWebLoader:
 
         def decompose():
             pass
+
         mock_tag = MagicMock()
         mock_tag.decompose = decompose
         mock_soup.find_all.return_value = [mock_tag]

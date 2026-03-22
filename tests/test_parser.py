@@ -1,4 +1,3 @@
-import pytest
 from src.generation.parser import QuestionParser
 
 
@@ -28,9 +27,9 @@ class TestQuestionParser:
 
     def test_parse_with_markdown_fences(self):
         """Test parsing JSON with markdown code fences."""
-        raw = '''```json
+        raw = """```json
 [{"question": "Q1?", "answer": "A1"}]
-```'''
+```"""
         result = self.parser.parse(raw)
 
         assert len(result) == 1
@@ -38,9 +37,9 @@ class TestQuestionParser:
 
     def test_parse_with_text_before_json(self):
         """Test parsing JSON embedded in text."""
-        raw = '''Here are the questions:
+        raw = """Here are the questions:
 [{"question": "Q1?", "answer": "A1"}, {"question": "Q2?", "answer": "A2"}]
-Hope this helps!'''
+Hope this helps!"""
         result = self.parser.parse(raw)
 
         assert len(result) == 2
@@ -49,7 +48,7 @@ Hope this helps!'''
 
     def test_parse_with_multiple_choice_options(self):
         """Test parsing questions with options."""
-        raw = '''[{"question": "What is 2+2?", "answer": "4", "options": ["3", "4", "5"]}]'''
+        raw = """[{"question": "What is 2+2?", "answer": "4", "options": ["3", "4", "5"]}]"""
         result = self.parser.parse(raw)
 
         assert len(result) == 1
@@ -57,7 +56,7 @@ Hope this helps!'''
 
     def test_parse_with_explanation(self):
         """Test parsing questions with explanations."""
-        raw = '''[{"question": "Q?", "answer": "A", "explanation": "Because..."}]'''
+        raw = """[{"question": "Q?", "answer": "A", "explanation": "Because..."}]"""
         result = self.parser.parse(raw)
 
         assert len(result) == 1
@@ -82,13 +81,13 @@ Hope this helps!'''
 
     def test_parse_multiple_questions(self):
         """Test parsing multiple questions."""
-        raw = '''
+        raw = """
         [
             {"question": "Q1?", "answer": "A1"},
             {"question": "Q2?", "answer": "A2"},
             {"question": "Q3?", "answer": "A3"}
         ]
-        '''
+        """
         result = self.parser.parse(raw)
 
         assert len(result) == 3
@@ -98,7 +97,7 @@ Hope this helps!'''
 
     def test_parse_complex_json(self):
         """Test parsing complex question structure."""
-        raw = '''
+        raw = """
         [{
             "question": "What is AI?",
             "answer": "Artificial Intelligence",
@@ -106,7 +105,7 @@ Hope this helps!'''
             "explanation": "AI stands for Artificial Intelligence",
             "difficulty": "easy"
         }]
-        '''
+        """
         result = self.parser.parse(raw)
 
         assert len(result) == 1
@@ -118,7 +117,7 @@ Hope this helps!'''
 
     def test_parse_json_with_special_characters(self):
         """Test parsing JSON with special characters."""
-        raw = '''[{"question": "What is café?", "answer": "A café is..."}]'''
+        raw = """[{"question": "What is café?", "answer": "A café is..."}]"""
         result = self.parser.parse(raw)
 
         assert len(result) == 1
@@ -126,7 +125,7 @@ Hope this helps!'''
 
     def test_parse_json_with_newlines_in_values(self):
         """Test parsing JSON with newlines in values."""
-        raw = '''[{"question": "Q?", "answer": "Line1\\nLine2"}]'''
+        raw = """[{"question": "Q?", "answer": "Line1\\nLine2"}]"""
         result = self.parser.parse(raw)
 
         assert len(result) == 1

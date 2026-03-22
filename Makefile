@@ -29,7 +29,7 @@ lint:
 	uv run ruff check src/ tests/
 
 format:
-	uv run black src/ tests/
+	uv run python -m black src/ tests/
 
 check: lint format test
 

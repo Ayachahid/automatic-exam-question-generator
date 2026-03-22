@@ -38,12 +38,8 @@ class TestOllamaProvider:
 
         mock_post.assert_called_with(
             f"{self.base_url}/api/generate",
-            json={
-                "model": self.model,
-                "prompt": "Test prompt",
-                "stream": False
-            },
-            timeout=600
+            json={"model": self.model, "prompt": "Test prompt", "stream": False},
+            timeout=600,
         )
 
     @patch("src.providers.ollama.httpx.post")
@@ -107,11 +103,7 @@ class TestOllamaProvider:
     @patch("src.providers.ollama.httpx.post")
     def test_generate_custom_timeout(self, mock_post):
         """Test generation with custom timeout."""
-        provider = OllamaProvider(
-            base_url=self.base_url,
-            model=self.model,
-            timeout=300
-        )
+        provider = OllamaProvider(base_url=self.base_url, model=self.model, timeout=300)
 
         mock_response = MagicMock()
         mock_response.json.return_value = {"response": "Generated"}
@@ -156,7 +148,7 @@ class TestProviderFactory:
         provider = factory.get_provider(
             provider_name="ollama",
             base_url="http://localhost:11434",
-            model="test-model"
+            model="test-model",
         )
 
         assert isinstance(provider, OllamaProvider)
@@ -171,7 +163,7 @@ class TestProviderFactory:
             factory.get_provider(
                 provider_name="unknown",
                 base_url="http://localhost:11434",
-                model="test-model"
+                model="test-model",
             )
 
         assert "unknown" in str(exc_info.value)
@@ -181,9 +173,7 @@ class TestProviderFactory:
         """Test getting provider with custom base URL."""
         factory = ProviderFactory()
         provider = factory.get_provider(
-            provider_name="ollama",
-            base_url="http://remote-server:8080",
-            model="llama3"
+            provider_name="ollama", base_url="http://remote-server:8080", model="llama3"
         )
 
         assert isinstance(provider, OllamaProvider)
@@ -198,6 +188,6 @@ class TestProviderFactory:
             provider = factory.get_provider(
                 provider_name="ollama",
                 base_url="http://localhost:11434",
-                model=model_name
+                model=model_name,
             )
             assert provider.model == model_name

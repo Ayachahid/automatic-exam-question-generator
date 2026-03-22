@@ -1,6 +1,7 @@
 from functools import lru_cache
 from src.generation.pipeline import QuestionGenerationPipeline
 
+
 @lru_cache()
 def get_pipeline() -> QuestionGenerationPipeline:
     """

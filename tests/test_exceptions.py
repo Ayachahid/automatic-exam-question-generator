@@ -1,4 +1,3 @@
-import pytest
 from src.core.exceptions import (
     ExamGeneratorError,
     InvalidChunkConfigError,
@@ -215,6 +214,7 @@ class TestExceptionHierarchy:
 
     def test_catch_all_custom_exceptions(self):
         """Test catching all custom exceptions as ExamGeneratorError."""
+
         def raise_each():
             raise InvalidChunkConfigError("test")
 

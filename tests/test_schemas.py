@@ -1,7 +1,11 @@
 import pytest
 from pydantic import ValidationError
 from src.api.schemas.request import GenerateRequest, QuestionType, Difficulty
-from src.api.schemas.response import QuestionResponse, GenerationResponse, UploadResponse
+from src.api.schemas.response import (
+    QuestionResponse,
+    GenerationResponse,
+    UploadResponse,
+)
 
 
 class TestQuestionType:
@@ -69,7 +73,7 @@ class TestGenerateRequest:
             text="Test",
             question_type=QuestionType.ESSAY,
             difficulty=Difficulty.HARD,
-            num_questions=10
+            num_questions=10,
         )
         assert request.question_type == QuestionType.ESSAY
         assert request.difficulty == Difficulty.HARD
@@ -109,11 +113,7 @@ class TestGenerateRequest:
 
     def test_generate_request_string_enums(self):
         """Test that string enums are accepted."""
-        request = GenerateRequest(
-            text="Test",
-            question_type="essay",
-            difficulty="hard"
-        )
+        request = GenerateRequest(text="Test", question_type="essay", difficulty="hard")
         assert request.question_type == QuestionType.ESSAY
         assert request.difficulty == Difficulty.HARD
 
@@ -131,11 +131,7 @@ class TestQuestionResponse:
 
     def test_question_response_with_options(self):
         """Test question response with options."""
-        q = QuestionResponse(
-            question="Q?",
-            answer="B",
-            options=["A", "B", "C"]
-        )
+        q = QuestionResponse(question="Q?", answer="B", options=["A", "B", "C"])
         assert q.options == ["A", "B", "C"]
 
     def test_question_response_with_explanation(self):
@@ -143,7 +139,7 @@ class TestQuestionResponse:
         q = QuestionResponse(
             question="Q?",
             answer="A",
-            explanation="This is the correct answer because..."
+            explanation="This is the correct answer because...",
         )
         assert q.explanation == "This is the correct answer because..."
 
@@ -153,7 +149,7 @@ class TestQuestionResponse:
             question="What is AI?",
             options=["ML", "AI", "DL"],
             answer="AI",
-            explanation="AI stands for Artificial Intelligence"
+            explanation="AI stands for Artificial Intelligence",
         )
         assert q.question == "What is AI?"
         assert q.options == ["ML", "AI", "DL"]
@@ -162,10 +158,7 @@ class TestQuestionResponse:
 
     def test_question_response_answer_int(self):
         """Test question response with integer answer."""
-        q = QuestionResponse(
-            question="Q?",
-            answer=1
-        )
+        q = QuestionResponse(question="Q?", answer=1)
         assert q.answer == 1
 
 
@@ -183,9 +176,9 @@ class TestGenerationResponse:
         r = GenerationResponse(
             questions=[
                 QuestionResponse(question="Q1?", answer="A1"),
-                QuestionResponse(question="Q2?", answer="A2")
+                QuestionResponse(question="Q2?", answer="A2"),
             ],
-            total=2
+            total=2,
         )
         assert len(r.questions) == 2
         assert r.total == 2
@@ -193,8 +186,7 @@ class TestGenerationResponse:
     def test_generation_response_total_matches_questions(self):
         """Test that total matches actual question count."""
         r = GenerationResponse(
-            questions=[QuestionResponse(question="Q?", answer="A")],
-            total=1
+            questions=[QuestionResponse(question="Q?", answer="A")], total=1
         )
         assert len(r.questions) == r.total
 
@@ -205,9 +197,7 @@ class TestUploadResponse:
     def test_upload_response_basic(self):
         """Test basic upload response."""
         r = UploadResponse(
-            filename="test.txt",
-            file_path="/data/raw/test.txt",
-            file_id="uuid-123"
+            filename="test.txt", file_path="/data/raw/test.txt", file_id="uuid-123"
         )
         assert r.filename == "test.txt"
         assert r.file_path == "/data/raw/test.txt"

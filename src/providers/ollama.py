@@ -1,11 +1,11 @@
 import httpx
 from .base import BaseProvider
 from src.core.exceptions import ProviderConnectionError, ProviderTimeoutError
- 
+
 
 class OllamaProvider(BaseProvider):
-    def __init__(self, base_url: str, model:str, timeout: int = 600):
-        self.base_url = base_url    # http://localhost:11434
+    def __init__(self, base_url: str, model: str, timeout: int = 600):
+        self.base_url = base_url  # http://localhost:11434
         self.model = model
         self.timeout = timeout
 
@@ -13,20 +13,16 @@ class OllamaProvider(BaseProvider):
         try:
             response = httpx.post(
                 f"{self.base_url}/api/generate",
-                json={
-                    "model":  self.model,
-                    "prompt": prompt,
-                    "stream": False
-                },
-                timeout=self.timeout
+                json={"model": self.model, "prompt": prompt, "stream": False},
+                timeout=self.timeout,
             )
-        
+
         except httpx.ConnectError:
             raise ProviderConnectionError("ollama", self.base_url)
-        
+
         except httpx.TimeoutException:
             raise ProviderTimeoutError("ollama", self.timeout)
-        
+
         data = response.json()
         # Handle error responses
         if "error" in data:

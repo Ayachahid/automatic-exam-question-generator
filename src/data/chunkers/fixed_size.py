@@ -1,13 +1,15 @@
 from .base import BaseChunker
 from src.core.exceptions import InvalidChunkConfigError
 
+
 class FixedSizeChunker(BaseChunker):
 
     def __init__(self, chunk_size=1000, overlap=100):
         if overlap >= chunk_size:
             raise InvalidChunkConfigError(
-                f"overlap ({overlap}) doit être inférieur à chunk_size ({chunk_size})")
-         
+                f"overlap ({overlap}) doit être inférieur à chunk_size ({chunk_size})"
+            )
+
         self.chunk_size = chunk_size
         self.overlap = overlap
 
@@ -15,7 +17,7 @@ class FixedSizeChunker(BaseChunker):
         if not text or not text.strip():
             return []
 
-        text   = text.strip()
+        text = text.strip()
         chunks = []
         start = 0
 
