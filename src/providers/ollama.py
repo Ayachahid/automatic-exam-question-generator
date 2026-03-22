@@ -4,7 +4,7 @@ from src.core.exceptions import ProviderConnectionError, ProviderTimeoutError
  
 
 class OllamaProvider(BaseProvider):
-    def __init__(self, base_url: str, model:str, timeout: int = 300):
+    def __init__(self, base_url: str, model:str, timeout: int = 600):
         self.base_url = base_url    # http://localhost:11434
         self.model = model
         self.timeout = timeout
