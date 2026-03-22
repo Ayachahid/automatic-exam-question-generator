@@ -1,0 +1,48 @@
+name: CD
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          version: "latest"
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: uv sync --frozen
+
+      - name: Run tests before deployment
+        run: uv run python -m pytest tests/ -v --tb=short
+
+      - name: Lint check
+        run: uv run ruff check src/
+
+      - name: Build package (optional)
+        run: |
+          # Add build steps if you want to publish to PyPI
+          # uv build
+          echo "Package build step - configure as needed"
+
+      - name: Deploy notification
+        run: |
+          echo "✅ CD Pipeline completed successfully!"
+          echo "📦 Release: ${{ github.event.release.tag_name }}"
+          echo "🔗 Repository: ${{ github.repository }}"
