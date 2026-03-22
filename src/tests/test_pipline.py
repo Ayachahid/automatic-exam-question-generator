@@ -3,14 +3,13 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
-from src.generation.pipeline import QuestionGenerationPipline
-
+from src.generation.pipeline import QuestionGenerationPipeline
 
 def main():
     file = "src/tests/data_tests/sample.txt"
 
     print("Creating pipeline...")
-    pipeline = QuestionGenerationPipline(file_path=file)
+    pipeline = QuestionGenerationPipeline(file_path=file)
     print("Pipeline created.")
 
     print("Running pipeline...")

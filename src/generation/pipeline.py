@@ -4,8 +4,8 @@ from src.data.chunkers.registry import ChunkerFactory
 from src.data.cleaner import TextCleaner    
 from src.generation.prompter import Prompter
 from src.generation.parser import QuestionParser
-from src.providers.ollama import OllamaProvider
-from src.core.config import AppConfig, load_config
+from src.providers.registry import ProviderFactory
+from src.core.config import load_config
 
 class QuestionGenerationPipeline:
     def __init__(self, config_path: str = "configs/config.yaml", file_path: Optional[str] = None):
@@ -15,9 +15,10 @@ class QuestionGenerationPipeline:
         self.chunker    = ChunkerFactory().get_chunker()
         self.prompter   = Prompter()
         self.parser     = QuestionParser()
-        self.provider   = OllamaProvider(
-            base_url=self.config.model.base_url,
-            model=self.config.model.name
+        self.provider   = ProviderFactory().get_provider(
+            provider_name = self.config.model.provider,
+            base_url      = self.config.model.base_url,
+            model         = self.config.model.name
         )
         self.file_path = file_path
 
