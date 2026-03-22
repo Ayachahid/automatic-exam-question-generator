@@ -4,8 +4,8 @@ from src.data.chunkers.registry import ChunkerFactory
 from src.data.cleaner import TextCleaner    
 from src.generation.prompter import Prompter
 from src.generation.parser import QuestionParser
-from src.core.config import load_config
 from src.providers.registry import ProviderFactory
+from src.core.config import load_config
 
 class QuestionGenerationPipeline:
     def __init__(self, config_path: str = "configs/config.yaml", file_path: Optional[str] = None):
@@ -57,25 +57,17 @@ class QuestionGenerationPipeline:
             
             prompt = self.prompter.build_prompt(
                 chunk,
-                question_type = question_type,
-                difficulty = difficulty,
-                num_questions = current_num
+                question_type   = question_type if question_type is not None else self.config.generation.question_type,
+                difficulty      = difficulty    if difficulty    is not None else self.config.generation.difficulty,
+                num_questions   = current_num
             )
 
             raw_output = self.provider.generate(prompt)
             parsed_questions = self.parser.parse(raw_output)
             
             # Only add what we need to reach the limit
-            validated = []
-            for q in parsed_questions:
-                try:
-                    validated_q = self.validator.validate(question_type, q)
-                    validated.append(validated_q.model_dump())
-                except Exception:
-                    validated.append(q)
-
-            validated            = validated[:remaining_questions]
-            all_parsed_questions.extend(validated)
-            remaining_questions -= len(validated)
+            parsed_questions = parsed_questions[:remaining_questions]
+            all_parsed_questions.extend(parsed_questions)
+            remaining_questions -= len(parsed_questions)
         
         return all_parsed_questions[:num_questions]
