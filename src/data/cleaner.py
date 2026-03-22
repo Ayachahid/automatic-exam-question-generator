@@ -16,15 +16,15 @@ class TextCleaner:
         return text.strip()
 
     def _normalize_unicode(self, text: str) -> str:
-      
+
         return unicodedata.normalize("NFKC", text)
 
     def _fix_hyphenation(self, text: str) -> str:
-        
+
         return re.sub(r"(\w)-\n(\w)", r"\1\2", text)
 
     def _remove_page_numbers(self, text: str) -> str:
-        
+
         return re.sub(r"\n\s*\d{1,4}\s*\n", "\n", text)
 
     def _collapse_whitespace(self, text: str) -> str:

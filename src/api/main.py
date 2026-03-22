@@ -5,7 +5,7 @@ from src.api.routers import upload, generate
 app = FastAPI(
     title="Exam Generator API",
     version="0.1.0",
-    description="API for automatically generating exam questions from course materials."
+    description="API for automatically generating exam questions from course materials.",
 )
 
 # Middleware
@@ -21,6 +21,7 @@ app.add_middleware(
 app.include_router(upload.router, prefix="/api/v1/upload", tags=["Files"])
 app.include_router(generate.router, prefix="/api/v1/generate", tags=["Generation"])
 
+
 @app.get("/health", tags=["System"])
 async def health_check():
     """
@@ -31,8 +32,9 @@ async def health_check():
         "components": {
             # Placeholder for future checks (e.g., Ollama connectivity)
             "ollama": "unknown"
-        }
+        },
     }
+
 
 @app.get("/")
 async def root():

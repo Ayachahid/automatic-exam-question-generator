@@ -1,1 +1,0 @@
-Backpropagation is the main algorithm used to train neural networks. It works by calculating how wrong the network’s prediction is and then sending that error backward through the network. Each connection (weight) is adjusted slightly to reduce the error. Repeating this process many times allows the network to learn patterns in the data

@@ -1,17 +1,16 @@
-from .base          import BaseQuestion
-from .mcq           import MCQQuestion
-from .true_false    import TrueFalseQuestion
-from .short_answer  import ShortAnswerQuestion
-from .essay         import EssayQuestion
+from .base import BaseQuestion
+from .mcq import MCQQuestion
+from .true_false import TrueFalseQuestion
+from .short_answer import ShortAnswerQuestion
+from .essay import EssayQuestion
 from .scenario_based import ScenarioBasedQuestion
 
-
 QUESTION_REGISTRY = {
-    "mcq":            MCQQuestion,
+    "mcq": MCQQuestion,
     "multiple_choice": MCQQuestion,
-    "true_false":     TrueFalseQuestion,
-    "short_answer":   ShortAnswerQuestion,
-    "essay":          EssayQuestion,
+    "true_false": TrueFalseQuestion,
+    "short_answer": ShortAnswerQuestion,
+    "essay": EssayQuestion,
     "scenario_based": ScenarioBasedQuestion,
 }
 
