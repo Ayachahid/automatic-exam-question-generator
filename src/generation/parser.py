@@ -1,5 +1,4 @@
 import json, re
-from pydantic import BaseModel
 
 class QuestionParser:
     def parse(self, raw_output: str) -> list[dict]:
@@ -15,10 +14,3 @@ class QuestionParser:
             if match:
                 return json.loads(match.group())
             return []  # fallback: return empty if unparseable
-        
-
-class MCQQuestion(BaseModel):
-    question: str
-    options: list[str]
-    answer: str
-    explanation: str
