@@ -1,6 +1,6 @@
 # Automatic Exam Question Generator - Makefile
 
-.PHONY: install api frontend test clean help
+.PHONY: install api frontend test lint format check clean help
 
 help:
 	@echo "Available commands:"
@@ -8,6 +8,9 @@ help:
 	@echo "  make api        - Run the FastAPI backend using uv run"
 	@echo "  make frontend   - Run the Streamlit frontend using uv run"
 	@echo "  make test       - Run pytest tests"
+	@echo "  make lint       - Run ruff linter"
+	@echo "  make format     - Format code with black"
+	@echo "  make check      - Run all checks (lint, format, test)"
 	@echo "  make clean      - Remove temporary files and caches"
 
 install:
@@ -21,6 +24,14 @@ frontend:
 
 test:
 	uv run python -m pytest tests/ -v
+
+lint:
+	uv run ruff check src/ tests/
+
+format:
+	uv run black src/ tests/
+
+check: lint format test
 
 clean:
 	@powershell -Command "Get-ChildItem -Recurse -Filter '__pycache__' | Remove-Item -Recurse -Force"
