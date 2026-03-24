@@ -1,7 +1,6 @@
 from .fixed_size import FixedSizeChunker
 from .sentence import SentenceChunker
-
-# from .semantic import SemanticChunker
+from .semantic import SemanticChunker
 # from .hybrid import HybridChunker
 
 
@@ -11,8 +10,8 @@ class ChunkerFactory:
             return FixedSizeChunker()
         elif chunker_name == "sentence":
             return SentenceChunker()
-        # elif chunker_name == "semantic":
-        #     return SemanticChunker()
+        elif chunker_name == "semantic":
+             return SemanticChunker()
         # elif chunker_name == "hybrid":
         #     return HybridChunker()
         else:

@@ -26,3 +26,6 @@ logs/
 
 # Gemini Context File
 GEMINI.md
+
+#history
+.history/
