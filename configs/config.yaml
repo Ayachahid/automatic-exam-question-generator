@@ -1,6 +1,6 @@
 model:
   provider: ollama
-  name: llama3.2:1b # qwen2.5:3b
+  name: qwen2.5:3b # llama3.2:1b 
   base_url: http://localhost:11434
 
 chunker:
