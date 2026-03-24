@@ -15,7 +15,16 @@ class QuestionGenerationPipeline:
         self.config = load_config(config_path)
         self.loader = LoaderFactory()
         self.cleaner = TextCleaner()
-        self.chunker = ChunkerFactory().get_chunker()
+        self.chunker = ChunkerFactory().get_chunker(
+            chunker_name=self.config.chunker.strategy,
+            chunk_size=self.config.chunker.chunk_size,
+            overlap=self.config.chunker.overlap,
+            model_name=self.config.chunker.model_name,
+            similarity_threshold=self.config.chunker.similarity_threshold,
+            max_sentences=self.config.chunker.max_sentences,
+            min_sentences=self.config.chunker.min_sentences,
+            batch_size=self.config.chunker.batch_size,
+        )
         self.prompter = Prompter()
         self.parser = QuestionParser()
         self.provider = ProviderFactory().get_provider(
