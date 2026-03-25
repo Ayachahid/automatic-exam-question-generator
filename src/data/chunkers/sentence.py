@@ -1,4 +1,3 @@
-import re
 from .base import BaseChunker
 
 
@@ -33,20 +32,3 @@ class SentenceChunker(BaseChunker):
             chunks.append(" ".join(current))
 
         return chunks
-
-    def _split_sentences(self, text: str) -> list[str]:
-        try:
-            import nltk
-
-            try:
-                return nltk.sent_tokenize(text)
-            except LookupError:
-                nltk.download("punkt", quiet=True)
-                nltk.download("punkt_tab", quiet=True)
-                return nltk.sent_tokenize(text)
-        except ImportError:
-            return self._simple_split(text)
-
-    def _simple_split(self, text: str) -> list[str]:
-        sentences = re.split(r"(?<=[.!?])\s+", text)
-        return [s.strip() for s in sentences if s.strip()]

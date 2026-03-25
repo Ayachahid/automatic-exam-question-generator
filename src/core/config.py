@@ -1,5 +1,6 @@
 import yaml
 from dataclasses import dataclass
+from typing import Optional
 
 
 @dataclass
@@ -14,6 +15,12 @@ class ChunkerConfig:
     strategy: str
     chunk_size: int
     overlap: int
+    # Semantic chunker parameters (optional, used when strategy="semantic")
+    model_name: Optional[str] = "all-MiniLM-L6-v2"
+    similarity_threshold: Optional[float] = 0.75
+    max_sentences: Optional[int] = 8
+    min_sentences: Optional[int] = 3
+    batch_size: Optional[int] = 64
 
 
 @dataclass
