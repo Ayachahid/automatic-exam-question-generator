@@ -1,8 +1,7 @@
 from .fixed_size import FixedSizeChunker
 from .sentence import SentenceChunker
 from .semantic import SemanticChunker
-
-# from .hybrid import HybridChunker
+from .hybrid import HybridChunker
 
 
 class ChunkerFactory:
@@ -31,7 +30,7 @@ class ChunkerFactory:
                 min_sentences=min_sentences,
                 batch_size=batch_size,
             )
-        # elif chunker_name == "hybrid":
-        #     return HybridChunker()
+        elif chunker_name == "hybrid":
+            return HybridChunker()
         else:
             return FixedSizeChunker(chunk_size=chunk_size, overlap=overlap)
