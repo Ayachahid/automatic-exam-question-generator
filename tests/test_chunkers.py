@@ -4,6 +4,10 @@ from src.data.chunkers.sentence import SentenceChunker
 from src.data.chunkers.registry import ChunkerFactory
 from src.core.exceptions import InvalidChunkConfigError
 from src.data.chunkers.semantic import SemanticChunker
+from src.data.chunkers.hybrid import HybridChunker
+from unittest.mock import MagicMock, patch
+
+import numpy as np
 
 
 class TestFixedSizeChunker:
@@ -156,6 +160,18 @@ class TestChunkerFactory:
         chunker = factory.get_chunker("sentence")
         assert isinstance(chunker, SentenceChunker)
 
+    def test_get_semantic_chunker(self):
+        """Test getting SemanticChunker from factory."""
+        factory = ChunkerFactory()
+        chunker = factory.get_chunker("semantic")
+        assert isinstance(chunker, SemanticChunker)
+
+    def test_get_hybrid_chunker(self):
+        """Test getting HybridChunker from factory."""
+        factory = ChunkerFactory()
+        chunker = factory.get_chunker("hybrid")
+        assert isinstance(chunker, HybridChunker)
+
     def test_get_default_chunker(self):
         """Test that unknown chunker name returns default."""
         factory = ChunkerFactory()
@@ -231,3 +247,170 @@ class TestSemanticChunker:
         for i in range(len(chunks) - 1):
             last_sentence = chunks[i].split(". ")[-1]
             assert last_sentence in chunks[i + 1]
+
+
+class TestHybridChunker:
+    """Tests for HybridChunker."""
+
+    def test_default_initialization(self):
+        """Test default parameters match hybrid.yaml."""
+        chunker = HybridChunker()
+        assert chunker.similarity_threshold == 0.75
+        assert chunker.max_chunk_size == 1200
+        assert chunker.min_chunk_size == 150
+        assert chunker.overlap == 80
+        assert chunker.model_name == "sentence-transformers/all-MiniLM-L6-v2"
+        assert chunker.model is None
+
+    def test_custom_initialization(self):
+        """Test custom parameters are stored correctly."""
+        chunker = HybridChunker(
+            model_name="custom-model",
+            similarity_threshold=0.9,
+            max_chunk_size=800,
+            min_chunk_size=100,
+            overlap=50,
+        )
+        assert chunker.model_name == "custom-model"
+        assert chunker.similarity_threshold == 0.9
+        assert chunker.max_chunk_size == 800
+        assert chunker.min_chunk_size == 100
+        assert chunker.overlap == 50
+
+    def test_invalid_min_greater_than_max(self):
+        """Test InvalidChunkConfigError when min_chunk_size >= max_chunk_size."""
+        with pytest.raises(InvalidChunkConfigError):
+            HybridChunker(min_chunk_size=500, max_chunk_size=500)
+
+    def test_invalid_overlap_greater_than_max_chunk(self):
+        """Test InvalidChunkConfigError when overlap >= max_chunk_size."""
+        with pytest.raises(InvalidChunkConfigError):
+            HybridChunker(overlap=1200, max_chunk_size=1200)
+
+    def test_internal_fixed_chunker_initialized(self):
+        """Test that internal FixedSizeChunker uses correct params."""
+        chunker = HybridChunker(max_chunk_size=800, overlap=50)
+        assert isinstance(chunker._fixed_chunker, FixedSizeChunker)
+        assert chunker._fixed_chunker.chunk_size == 800
+        assert chunker._fixed_chunker.overlap == 50
+
+    # edge cases (no model needed)
+
+    def test_empty_string_returns_empty(self):
+        """Test that empty input returns empty list."""
+        chunker = HybridChunker()
+        assert chunker.chunk("") == []
+
+    def test_whitespace_only_returns_empty(self):
+        """Test that whitespace-only input returns empty list."""
+        chunker = HybridChunker()
+        assert chunker.chunk("   ") == []
+
+    def test_none_returns_empty(self):
+        """Test that None input returns empty list."""
+        chunker = HybridChunker()
+        assert chunker.chunk(None) == []
+
+    def test_short_text_single_chunk(self):
+        """Test that text shorter than max_chunk_size returns as single chunk."""
+        chunker = HybridChunker(max_chunk_size=1200, min_chunk_size=150, overlap=80)
+        text = "This is a short text."
+        with patch.object(chunker, "_load_model"):
+            result = chunker.chunk(text)
+        assert len(result) == 1
+        assert result[0] == "This is a short text."
+
+    #  cosine similarity
+
+    def test_cosine_identical_vectors(self):
+        """Identical vectors → similarity = 1.0."""
+        chunker = HybridChunker()
+        v = np.array([1.0, 2.0, 3.0])
+        assert chunker._cosine_similarity(v, v) == pytest.approx(1.0)
+
+    def test_cosine_orthogonal_vectors(self):
+        """Orthogonal vectors → similarity = 0.0."""
+        chunker = HybridChunker()
+        a = np.array([1.0, 0.0, 0.0])
+        b = np.array([0.0, 1.0, 0.0])
+        assert chunker._cosine_similarity(a, b) == pytest.approx(0.0)
+
+    def test_cosine_opposite_vectors(self):
+        """Opposite vectors → similarity = -1.0."""
+        chunker = HybridChunker()
+        a = np.array([1.0, 0.0])
+        b = np.array([-1.0, 0.0])
+        assert chunker._cosine_similarity(a, b) == pytest.approx(-1.0)
+
+    def test_cosine_zero_vector(self):
+        """Zero vector → similarity = 0.0, no division by zero."""
+        chunker = HybridChunker()
+        a = np.array([0.0, 0.0, 0.0])
+        b = np.array([1.0, 2.0, 3.0])
+        assert chunker._cosine_similarity(a, b) == 0.0
+
+    #  semantic merge logic
+
+    def test_similar_chunks_are_merged(self):
+        """Similar embeddings → chunks merged."""
+        chunker = HybridChunker(max_chunk_size=500, min_chunk_size=50, overlap=50)
+        chunker.model = MagicMock()
+
+        emb = np.array([1.0, 0.0, 0.0])
+        result = chunker._semantic_merge(
+            ["First chunk content.", "Second chunk content."],
+            [emb, emb],
+        )
+
+        assert len(result) == 1
+        assert "First chunk" in result[0]
+        assert "Second chunk" in result[0]
+
+    def test_different_chunks_stay_separate(self):
+        """Orthogonal embeddings → chunks stay separate."""
+        chunker = HybridChunker(max_chunk_size=500, min_chunk_size=0, overlap=50)
+        chunker.model = MagicMock()
+
+        emb_a = np.array([1.0, 0.0, 0.0])
+        emb_b = np.array([0.0, 1.0, 0.0])
+
+        result = chunker._semantic_merge(["A" * 100, "B" * 100], [emb_a, emb_b])
+
+        assert len(result) == 2
+
+    def test_short_chunk_force_merged_with_next(self):
+        """Short chunk (< min_chunk_size) is merged regardless of similarity."""
+        chunker = HybridChunker(max_chunk_size=500, min_chunk_size=100, overlap=50)
+        chunker.model = MagicMock()
+
+        emb_a = np.array([1.0, 0.0, 0.0])
+        emb_b = np.array([0.0, 1.0, 0.0])  # different but still merged
+
+        result = chunker._semantic_merge(["Short.", "B" * 100], [emb_a, emb_b])
+
+        assert len(result) == 1
+        assert "Short." in result[0]
+
+    def test_merge_respects_max_chunk_size(self):
+        """Chunks are NOT merged if result exceeds max_chunk_size."""
+        chunker = HybridChunker(max_chunk_size=100, min_chunk_size=0, overlap=10)
+        chunker.model = MagicMock()
+
+        emb = np.array([1.0, 0.0, 0.0])
+        result = chunker._semantic_merge(["A" * 60, "B" * 60], [emb, emb])
+
+        assert len(result) == 2
+
+    # model loading
+
+    def test_model_is_none_at_init(self):
+        """Model should be None before first chunk() call."""
+        chunker = HybridChunker()
+        assert chunker.model is None
+
+    def test_load_model_raises_import_error(self):
+        """ImportError raised when sentence-transformers is missing."""
+        chunker = HybridChunker()
+        with patch.dict("sys.modules", {"sentence_transformers": None}):
+            with pytest.raises(ImportError, match="sentence-transformers"):
+                chunker._load_model()
