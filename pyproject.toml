@@ -26,6 +26,7 @@ dependencies = [
     "uvicorn>=0.41.0",
     "streamlit>=1.55.0",
     "sentence-transformers>=5.3.0",
+    "reportlab>=4.0.0"
 ]
 
 [dependency-groups]
@@ -38,3 +39,6 @@ dev = [
     "pytest>=9.0.2",
     "ruff>=0.15.5",
 ]
+
+[tool.black]
+target-version = ["py311"]
