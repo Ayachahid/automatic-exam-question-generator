@@ -86,7 +86,9 @@ class BLEUMetric(BaseMetric):
         for n in range(1, min(self.max_n, 4) + 1):
             w = tuple(1.0 if i == n - 1 else 0.0 for i in range(4))
             scores = [
-                sentence_bleu([ref], pred, weights=w, smoothing_function=smoother)
+                # `ref` is already [[tokens]] (list-of-lists), so pass it directly.
+                # Wrapping it again as [ref] would produce [[[tokens]]] — unhashable.
+                sentence_bleu(ref, pred, weights=w, smoothing_function=smoother)
                 for pred, ref in zip(tokenized_preds, tokenized_refs)
             ]
             per_order[f"bleu_{n}"] = round(sum(scores) / len(scores), 4)
