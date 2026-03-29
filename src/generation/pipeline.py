@@ -6,12 +6,17 @@ from src.generation.prompter import Prompter
 from src.generation.parser import QuestionParser
 from src.providers.registry import ProviderFactory
 from src.core.config import load_config
+from src.core.logger import get_logger
+
+logger = get_logger("generation.pipeline")
 
 
 class QuestionGenerationPipeline:
     def __init__(
         self, config_path: str = "configs/config.yaml", file_path: Optional[str] = None
     ):
+        logger.info("Initializing QuestionGenerationPipeline")
+
         self.config = load_config(config_path)
         self.loader = LoaderFactory()
         self.cleaner = TextCleaner()
@@ -43,12 +48,17 @@ class QuestionGenerationPipeline:
         num_questions: Optional[int] = None,
     ) -> List[dict]:
 
+        logger.info("Starting question generation pipeline")
+
         # Determine source content
         if file_path:
+            logger.info(f"Loading content from file_path: {file_path}")
             raw_content = self.loader.get_loader(file_path).load(file_path)
         elif text:
+            logger.info("Using provided raw text input")
             raw_content = text
         elif self.file_path:
+            logger.info(f"Using default file_path: {self.file_path}")
             raw_content = self.loader.get_loader(self.file_path).load(self.file_path)
         else:
             raise ValueError(
@@ -57,7 +67,8 @@ class QuestionGenerationPipeline:
 
         clean_text = self.cleaner.clean(raw_content)
         chunks = self.chunker.chunk(text=clean_text)
-        print(f"Processing {len(chunks)} chunks...")  # Debug print
+        logger.debug(f"Number of chunks created: {len(chunks)}")
+        logger.info(f"Processing {len(chunks)} chunks...")  # Debug print
 
         all_parsed_questions = []
         num_chunks = len(chunks)
@@ -68,10 +79,14 @@ class QuestionGenerationPipeline:
             if remaining_questions <= 0:
                 break
 
+            logger.info(f"Processing chunk {i+1}/{num_chunks}")
+
             # For the last chunk, take all remaining needed questions
             current_num = (
                 remaining_questions if i == num_chunks - 1 else questions_per_chunk
             )
+
+            logger.debug(f"Generating {current_num} questions for this chunk")
 
             prompt = self.prompter.build_prompt(
                 chunk,
@@ -89,11 +104,17 @@ class QuestionGenerationPipeline:
             )
 
             raw_output = self.provider.generate(prompt)
+            logger.debug("Parsing generated output")
             parsed_questions = self.parser.parse(raw_output)
 
             # Only add what we need to reach the limit
             parsed_questions = parsed_questions[:remaining_questions]
             all_parsed_questions.extend(parsed_questions)
             remaining_questions -= len(parsed_questions)
+            logger.debug(f"Remaining questions to generate: {remaining_questions}")
+
+        logger.info(
+            f"Pipeline finished. Total questions generated: {len(all_parsed_questions)}"
+        )
 
         return all_parsed_questions[:num_questions]

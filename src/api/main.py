@@ -1,6 +1,10 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from src.api.routers import upload, generate
+from src.core.logger import get_logger
+
+logger = get_logger("api.main")
+
 
 app = FastAPI(
     title="Exam Generator API",
@@ -24,6 +28,7 @@ app.include_router(generate.router, prefix="/api/v1/generate", tags=["Generation
 
 @app.get("/health", tags=["System"])
 async def health_check():
+    logger.info("Health check endpoint called")
     """
     Check the health of the API and its dependencies.
     """
@@ -38,4 +43,5 @@ async def health_check():
 
 @app.get("/")
 async def root():
+    logger.info("Root endpoint accessed")
     return {"message": "Welcome to the Exam Generator API"}

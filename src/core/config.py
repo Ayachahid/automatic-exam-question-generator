@@ -1,6 +1,9 @@
 import yaml
 from dataclasses import dataclass
 from typing import Optional
+from src.core.logger import get_logger
+
+logger = get_logger("core.config")
 
 
 @dataclass
@@ -38,11 +41,20 @@ class AppConfig:
 
 
 def load_config(path: str = "configs/config.yaml") -> AppConfig:
+    logger.info(f"Loading config from: {path}")
     with open(path, "r") as f:
         raw = yaml.safe_load(f)
 
-    return AppConfig(
+    config = AppConfig(
         model=ModelConfig(**raw["model"]),
         chunker=ChunkerConfig(**raw["chunker"]),
         generation=GenerationConfig(**raw["generation"]),
     )
+
+    logger.info(
+        f"Config loaded: provider={config.model.provider} "
+        f"model={config.model.name} "
+        f"chunker={config.chunker.strategy}"
+    )
+
+    return config
