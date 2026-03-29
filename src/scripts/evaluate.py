@@ -202,7 +202,7 @@ def main() -> int:
     # Detect question type
     q_type = (
         args.question_type
-        or raw.get("question_type")
+        or (raw.get("question_type") if isinstance(raw, dict) else None)
         or detect_question_type(questions)
     )
     required_fields = REQUIRED_FIELDS.get(q_type, REQUIRED_FIELDS["default"])
