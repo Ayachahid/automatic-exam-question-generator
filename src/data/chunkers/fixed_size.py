@@ -1,5 +1,8 @@
 from .base import BaseChunker
 from src.core.exceptions import InvalidChunkConfigError
+from src.core.logger import get_logger
+
+logger = get_logger("data.chunkers.fixed_size")
 
 
 class FixedSizeChunker(BaseChunker):
@@ -12,9 +15,13 @@ class FixedSizeChunker(BaseChunker):
 
         self.chunk_size = chunk_size
         self.overlap = overlap
+        logger.debug(
+            f"FixedSizeChunker initialized: chunk_size={chunk_size} overlap={overlap}"
+        )
 
     def chunk(self, text: str) -> list[str]:
         if not text or not text.strip():
+            logger.debug("Empty input — returning []")
             return []
 
         text = text.strip()
@@ -36,4 +43,5 @@ class FixedSizeChunker(BaseChunker):
 
             start += self.chunk_size - self.overlap
 
+        logger.debug(f"FixedSizeChunker produced {len(chunks)} chunks")
         return chunks

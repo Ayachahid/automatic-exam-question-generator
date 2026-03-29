@@ -2,6 +2,9 @@ import numpy as np
 from typing import List
 from .base import BaseChunker
 from src.core.exceptions import InvalidChunkConfigError
+from src.core.logger import get_logger
+
+logger = get_logger("data.chunkers.semantic")
 
 
 class SemanticChunker(BaseChunker):
@@ -24,13 +27,18 @@ class SemanticChunker(BaseChunker):
         self.min_sentences = min_sentences
         self.batch_size = batch_size
         self.model = None
+        logger.debug(
+            f"SemanticChunker initialized: model={model_name} threshold={similarity_threshold}"
+        )
 
     def _load_model(self) -> None:
         if self.model is None:
+            logger.info(f"Loading SentenceTransformer model: {self.model_name}")
             try:
                 from sentence_transformers import SentenceTransformer
 
                 self.model = SentenceTransformer(self.model_name)
+                logger.info("SentenceTransformer model loaded successfully")
             except ImportError:
                 raise ImportError(
                     "sentence-transformers is required for SemanticChunker. "
@@ -39,6 +47,7 @@ class SemanticChunker(BaseChunker):
 
     def chunk(self, text: str) -> List[str]:
         if not text or not text.strip():
+            logger.debug("Empty input — returning []")
             return []
 
         sentences = self._split_sentences(text.strip())
@@ -80,6 +89,9 @@ class SemanticChunker(BaseChunker):
 
         if current:
             chunks.append(" ".join(current))
+        logger.debug(
+            f"SemanticChunker produced {len(chunks)} chunks from {len(sentences)} sentences"
+        )
 
         return chunks
 

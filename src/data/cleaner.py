@@ -1,17 +1,25 @@
 import re
 import unicodedata
+from src.core.logger import get_logger
+
+logger = get_logger("data.cleaner")
 
 
 class TextCleaner:
 
     def clean(self, text: str) -> str:
         if not text:
+            logger.warning("Empty text received in TextCleaner")
             return ""
+
+        logger.debug("Starting text cleaning")
 
         text = self._normalize_unicode(text)
         text = self._fix_hyphenation(text)
         text = self._remove_page_numbers(text)
         text = self._collapse_whitespace(text)
+
+        logger.debug("Text cleaning completed")
 
         return text.strip()
 
