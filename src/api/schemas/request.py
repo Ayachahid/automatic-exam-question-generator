@@ -17,6 +17,12 @@ class Difficulty(str, Enum):
     HARD = "hard"
 
 
+class ExportFormat(str, Enum):
+    JSON = "json"
+    PDF = "pdf"
+    TXT = "txt"
+
+
 class GenerateRequest(BaseModel):
     file_path: Optional[str] = Field(
         None, description="Path to a previously uploaded file."
@@ -46,3 +52,11 @@ class GenerateRequest(BaseModel):
             )
 
         return self
+
+
+class ExportRequest(BaseModel):
+    questions: list = Field(..., description="List of questions to export.")
+    format: ExportFormat = Field(default=ExportFormat.JSON, description="Export format.")
+    filename: Optional[str] = Field(
+        None, description="Custom filename for the exported file."
+    )

@@ -277,9 +277,62 @@ if st.session_state.questions:
             st.divider()
 
     # --- Export Feature ---
-    st.download_button(
-        label="📥 Download Questions (JSON)",
-        data=json.dumps(st.session_state.questions, indent=2),
-        file_name="generated_questions.json",
-        mime="application/json",
-    )
+    st.subheader("📤 Export Questions")
+
+    col1, col2, col3 = st.columns(3)
+
+    with col1:
+        export_format = st.selectbox(
+            "Format",
+            options=["json", "pdf", "txt"],
+            index=0,
+        )
+
+    with col2:
+        export_filename = st.text_input(
+            "Filename (optional)",
+            placeholder="exam_questions",
+            key="export_filename_input",
+        )
+
+    with col3:
+        export_btn = st.button("📥 Export", type="primary", use_container_width=True)
+
+    if export_btn:
+        try:
+            export_payload = {
+                "questions": st.session_state.questions,
+                "format": export_format,
+                "filename": export_filename.strip() if export_filename.strip() else None,
+            }
+
+            response = httpx.post(
+                f"{API_BASE_URL}/export/",
+                json=export_payload,
+                timeout=60.0,
+            )
+            response.raise_for_status()
+
+            # Get filename from headers or use default
+            content_disposition = response.headers.get("Content-Disposition", "")
+            if "filename=" in content_disposition:
+                download_filename = content_disposition.split("filename=")[1].strip('"')
+            else:
+                download_filename = f"exam_questions.{export_format}"
+
+            st.download_button(
+                label=f"⬇️ Download {export_format.upper()}",
+                data=response.content,
+                file_name=download_filename,
+                mime={
+                    "json": "application/json",
+                    "pdf": "application/pdf",
+                    "txt": "text/plain",
+                }.get(export_format, "application/octet-stream"),
+                key=f"download_{export_format}_{st.session_state.gen_id}",
+            )
+
+        except httpx.HTTPStatusError as e:
+            st.error(f"❌ Export failed ({e.response.status_code}): {e.response.text}")
+        except Exception as e:
+            st.error(f"❌ Export failed: {str(e)}")
