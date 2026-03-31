@@ -146,7 +146,7 @@ def _generate_pdf_content(questions: list) -> bytes:
     return buffer.getvalue()
 
 
-@router.post("/export/", tags=["Export"])
+@router.post("/", tags=["Export"])
 async def export_questions(request: ExportRequest):
     """
     Export generated questions in various formats (JSON, PDF, TXT).
