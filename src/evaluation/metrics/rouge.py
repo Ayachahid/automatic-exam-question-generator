@@ -117,6 +117,9 @@ class ROUGEMetric(BaseMetric):
         """
         Compute mean ROUGE scores over all prediction/reference pairs.
 
+        Tokenization is cached to avoid redundant computation across
+        ROUGE-1, ROUGE-2, and ROUGE-L variants.
+
         Args:
             predictions: Generated answers.
             references:  Reference answers.
@@ -137,6 +140,11 @@ class ROUGEMetric(BaseMetric):
         """
         self._validate_inputs(predictions, references)
 
+        # Pre-tokenize all pairs once (cached for all variants)
+        tokenized_pairs = [
+            (_tokenize(p), _tokenize(r)) for p, r in zip(predictions, references)
+        ]
+
         accum: dict[str, list[float]] = {
             v: []
             for v in [
@@ -152,24 +160,50 @@ class ROUGEMetric(BaseMetric):
             ]
         }
 
-        for pred, ref in zip(predictions, references):
+        for pred_tokens, ref_tokens in tokenized_pairs:
             if "rouge1" in self.variants:
-                r1 = _rouge_n(pred, ref, 1)
-                accum["rouge1_f1"].append(r1["f1"])
-                accum["rouge1_p"].append(r1["precision"])
-                accum["rouge1_r"].append(r1["recall"])
+                # Use pre-computed n-grams for ROUGE-1
+                pred_1grams = _ngrams(pred_tokens, 1)
+                ref_1grams = _ngrams(ref_tokens, 1)
+                overlap = sum(
+                    min(count, ref_1grams.get(gram, 0))
+                    for gram, count in pred_1grams.items()
+                )
+                pred_count = sum(pred_1grams.values())
+                ref_count = sum(ref_1grams.values())
+                p = overlap / pred_count if pred_count > 0 else 0.0
+                r = overlap / ref_count if ref_count > 0 else 0.0
+                f1 = 2 * p * r / (p + r) if (p + r) > 0 else 0.0
+                accum["rouge1_f1"].append(f1)
+                accum["rouge1_p"].append(p)
+                accum["rouge1_r"].append(r)
 
             if "rouge2" in self.variants:
-                r2 = _rouge_n(pred, ref, 2)
-                accum["rouge2_f1"].append(r2["f1"])
-                accum["rouge2_p"].append(r2["precision"])
-                accum["rouge2_r"].append(r2["recall"])
+                # Use pre-computed n-grams for ROUGE-2
+                pred_2grams = _ngrams(pred_tokens, 2)
+                ref_2grams = _ngrams(ref_tokens, 2)
+                overlap = sum(
+                    min(count, ref_2grams.get(gram, 0))
+                    for gram, count in pred_2grams.items()
+                )
+                pred_count = sum(pred_2grams.values())
+                ref_count = sum(ref_2grams.values())
+                p = overlap / pred_count if pred_count > 0 else 0.0
+                r = overlap / ref_count if ref_count > 0 else 0.0
+                f1 = 2 * p * r / (p + r) if (p + r) > 0 else 0.0
+                accum["rouge2_f1"].append(f1)
+                accum["rouge2_p"].append(p)
+                accum["rouge2_r"].append(r)
 
             if "rougeL" in self.variants:
-                rl = _rouge_l(pred, ref)
-                accum["rougeL_f1"].append(rl["f1"])
-                accum["rougeL_p"].append(rl["precision"])
-                accum["rougeL_r"].append(rl["recall"])
+                # Use pre-tokenized for ROUGE-L
+                lcs = _lcs_length(pred_tokens, ref_tokens)
+                p = lcs / len(pred_tokens) if pred_tokens else 0.0
+                r = lcs / len(ref_tokens) if ref_tokens else 0.0
+                f1 = 2 * p * r / (p + r) if (p + r) > 0 else 0.0
+                accum["rougeL_f1"].append(f1)
+                accum["rougeL_p"].append(p)
+                accum["rougeL_r"].append(r)
 
         def _mean(lst: list[float]) -> float:
             return round(sum(lst) / len(lst), 4) if lst else 0.0

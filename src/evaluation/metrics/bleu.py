@@ -1,3 +1,9 @@
+from nltk.translate.bleu_score import (
+    SmoothingFunction,
+    corpus_bleu,
+    sentence_bleu,
+)
+
 from src.core.logger import get_logger
 
 from .base import BaseMetric
@@ -84,10 +90,8 @@ class BLEUMetric(BaseMetric):
         # Per-order scores (BLEU-1 to BLEU-4)
         per_order: dict[str, float] = {}
         for n in range(1, min(self.max_n, 4) + 1):
-            w = tuple(1.0 if i == n - 1 else 0.0 for i in range(4))
+            w = tuple(1.0 if i == n - 1 else 0.0 for i in range(n))
             scores = [
-                # `ref` is already [[tokens]] (list-of-lists), so pass it directly.
-                # Wrapping it again as [ref] would produce [[[tokens]]] — unhashable.
                 sentence_bleu(ref, pred, weights=w, smoothing_function=smoother)
                 for pred, ref in zip(tokenized_preds, tokenized_refs)
             ]
