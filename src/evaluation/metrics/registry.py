@@ -4,7 +4,6 @@ from .base import BaseMetric
 from .bertscore import BERTScoreMetric
 from .bleu import BLEUMetric
 from .rouge import ROUGEMetric
-from .validator import QuestionValidator
 
 logger = get_logger("evaluation.metrics.registry")
 
@@ -70,21 +69,3 @@ class MetricFactory:
     def supported_metrics() -> list[str]:
         """Return list of supported metric names."""
         return list(METRIC_REGISTRY.keys())
-
-    @staticmethod
-    def get_validator(
-        question_type: str = "default", strict: bool = False
-    ) -> QuestionValidator:
-        """
-        Convenience method to get a QuestionValidator.
-
-        Args:
-            question_type: One of "multiple_choice", "true_false",
-                           "short_answer", "essay", "scenario_based", "default".
-            strict:        If True, treat warnings as errors.
-
-        Returns:
-            Configured QuestionValidator instance.
-        """
-        logger.info(f"Creating QuestionValidator: type={question_type} strict={strict}")
-        return QuestionValidator(question_type=question_type, strict=strict)
