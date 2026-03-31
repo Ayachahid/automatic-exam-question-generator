@@ -307,7 +307,7 @@ if st.session_state.questions:
             }
 
             response = httpx.post(
-                f"{API_BASE_URL}/export/export/",
+                f"{API_BASE_URL}/export/",
                 json=export_payload,
                 timeout=60.0,
             )

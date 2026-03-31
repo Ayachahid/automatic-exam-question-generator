@@ -2,7 +2,7 @@ import io
 import json
 from datetime import datetime
 from fastapi import APIRouter, HTTPException
-from fastapi.responses import StreamingResponse, JSONResponse
+from fastapi.responses import StreamingResponse
 
 from src.api.schemas.request import ExportRequest, ExportFormat
 from src.core.logger import get_logger
@@ -164,13 +164,11 @@ async def export_questions(request: ExportRequest):
 
     try:
         if request.format == ExportFormat.JSON:
-            content = json.dumps(request.questions, indent=2)
-            return JSONResponse(
-                content=request.questions,
-                headers={
-                    "Content-Disposition": f'attachment; filename="{filename}.json"',
-                    "Content-Type": "application/json",
-                },
+            json_bytes = json.dumps(request.questions, indent=2).encode("utf-8")
+            return StreamingResponse(
+                io.BytesIO(json_bytes),
+                media_type="application/json",
+                headers={"Content-Disposition": f'attachment; filename="{filename}.json"'},
             )
 
         elif request.format == ExportFormat.TXT:
