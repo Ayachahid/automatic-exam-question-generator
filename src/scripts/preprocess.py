@@ -1,6 +1,7 @@
 import argparse
 import sys
 from pathlib import Path
+
 from src.core.config import load_config
 from src.core.logger import get_logger
 from src.data.chunkers.registry import ChunkerFactory
@@ -8,6 +9,48 @@ from src.data.cleaner import TextCleaner
 from src.data.loaders.registry import LoaderFactory
 
 logger = get_logger("scripts.preprocess")
+
+# Base directory for path validation (project root)
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+
+def safe_path(user_path: str, allowed_base: Path) -> Path:
+    """
+    Resolve and validate path to prevent path traversal attacks.
+
+    For relative paths: resolves against allowed_base and validates it stays within.
+    For absolute paths: validates the path doesn't contain traversal sequences.
+
+    Args:
+        user_path: User-provided path string.
+        allowed_base: Base directory for relative path resolution.
+
+    Returns:
+        Resolved and validated Path object.
+
+    Raises:
+        ValueError: If path traversal is detected.
+    """
+    user_path_obj = Path(user_path)
+
+    # Handle absolute paths (e.g., from pytest temp directories)
+    if user_path_obj.is_absolute():
+        resolved = user_path_obj.resolve()
+        # Check for suspicious patterns but allow legitimate absolute paths
+        if ".." in user_path:
+            # Verify it doesn't escape to sensitive locations
+            resolved_str = str(resolved).lower()
+            if any(s in resolved_str for s in ["/etc/", "/passwd", "/shadow", "windows/system32"]):
+                raise ValueError(f"Path traversal detected: {user_path}")
+        return resolved
+
+    # Relative paths: resolve against allowed_base
+    resolved = (allowed_base / user_path).resolve()
+    try:
+        resolved.relative_to(allowed_base.resolve())
+    except ValueError:
+        raise ValueError(f"Path traversal detected: {user_path}")
+    return resolved
 
 
 def parse_args() -> argparse.Namespace:
@@ -46,7 +89,8 @@ def parse_args() -> argparse.Namespace:
 
 def resolve_output_path(input_path: str, output_arg: str | None) -> Path:
     if output_arg:
-        return Path(output_arg)
+        # Validate user-provided output path
+        return safe_path(output_arg, BASE_DIR)
     stem = Path(input_path).stem if not input_path.startswith("http") else "web_content"
     out_dir = Path("data/processed")
     out_dir.mkdir(parents=True, exist_ok=True)

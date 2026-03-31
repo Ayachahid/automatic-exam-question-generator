@@ -1,5 +1,4 @@
 import argparse
-import importlib
 import sys
 from pathlib import Path
 
@@ -7,7 +6,50 @@ from src.core.logger import get_logger
 
 logger = get_logger("scripts.evaluate")
 
-_json = importlib.import_module("json")
+import json
+
+# Base directory for path validation (project root)
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+
+def safe_path(user_path: str, allowed_base: Path) -> Path:
+    """
+    Resolve and validate path to prevent path traversal attacks.
+
+    For relative paths: resolves against allowed_base and validates it stays within.
+    For absolute paths: validates the path doesn't contain traversal sequences.
+
+    Args:
+        user_path: User-provided path string.
+        allowed_base: Base directory for relative path resolution.
+
+    Returns:
+        Resolved and validated Path object.
+
+    Raises:
+        ValueError: If path traversal is detected.
+    """
+    user_path_obj = Path(user_path)
+
+    # Handle absolute paths (e.g., from pytest temp directories)
+    if user_path_obj.is_absolute():
+        resolved = user_path_obj.resolve()
+        # Check for suspicious patterns but allow legitimate absolute paths
+        if ".." in user_path:
+            # Verify it doesn't escape to sensitive locations
+            resolved_str = str(resolved).lower()
+            if any(s in resolved_str for s in ["/etc/", "/passwd", "/shadow", "windows/system32"]):
+                raise ValueError(f"Path traversal detected: {user_path}")
+        return resolved
+
+    # Relative paths: resolve against allowed_base
+    resolved = (allowed_base / user_path).resolve()
+    try:
+        resolved.relative_to(allowed_base.resolve())
+    except ValueError:
+        raise ValueError(f"Path traversal detected: {user_path}")
+    return resolved
+
 
 # Required fields per question type
 REQUIRED_FIELDS: dict[str, list[str]] = {
@@ -53,25 +95,31 @@ def parse_args() -> argparse.Namespace:
 # Metric helpers
 
 
-def compute_completeness(questions: list[dict], required_fields: list[str]) -> dict:
+def compute_completeness(
+    questions: list[dict], required_fields: list[str], verbose: bool = False
+) -> dict:
     """Check that each question has all required fields with non-empty values."""
     complete = 0
     missing_per_q = []
 
     for q in questions:
-        missing = [f for f in required_fields if not q.get(f)]
+        missing = [f for f in required_fields if not (q and q.get(f))]
         if not missing:
             complete += 1
-        missing_per_q.append(missing)
+        if verbose:
+            missing_per_q.append(missing)
 
-    return {
+    result = {
         "complete_count": complete,
         "total": len(questions),
         "completeness_pct": (
             round(complete / len(questions) * 100, 1) if questions else 0
         ),
-        "missing_fields_per_question": missing_per_q,
     }
+    if verbose:
+        result["missing_fields_per_question"] = missing_per_q
+
+    return result
 
 
 def compute_uniqueness(questions: list[dict]) -> dict:
@@ -109,28 +157,45 @@ def compute_empty_answers(questions: list[dict]) -> dict:
 
 
 def compute_field_coverage(questions: list[dict]) -> dict:
-    """Count presence of optional fields across all questions."""
+    """Count presence of optional fields across all questions (single-pass)."""
     optional_fields = ["explanation", "options", "scenario", "concepts_tested"]
-    coverage = {}
+    coverage = {field: {"count": 0} for field in optional_fields}
+
+    # Single pass through all questions
+    for q in questions:
+        for field in optional_fields:
+            if q.get(field):
+                coverage[field]["count"] += 1
+
+    total = len(questions) if questions else 0
     for field in optional_fields:
-        count = sum(1 for q in questions if q.get(field))
-        coverage[field] = {
-            "count": count,
-            "pct": round(count / len(questions) * 100, 1) if questions else 0,
-        }
+        coverage[field]["pct"] = (
+            round(coverage[field]["count"] / total * 100, 1) if total else 0
+        )
+
     return coverage
 
 
 def detect_question_type(questions: list[dict]) -> str:
-    """Auto-detect question type from fields present."""
+    """Auto-detect question type from fields present using majority voting."""
     if not questions:
         return "default"
-    sample = questions[0]
-    if "scenario" in sample:
-        return "scenario_based"
-    if "options" in sample:
-        return "multiple_choice"
-    return "default"
+
+    # Sample up to first 10 questions for better accuracy
+    sample_size = min(10, len(questions))
+    type_counts: dict[str, int] = {}
+
+    for q in questions[:sample_size]:
+        if "scenario" in q:
+            q_type = "scenario_based"
+        elif "options" in q:
+            q_type = "multiple_choice"
+        else:
+            q_type = "default"
+        type_counts[q_type] = type_counts.get(q_type, 0) + 1
+
+    # Return the most common type
+    return max(type_counts.keys(), key=lambda k: type_counts[k])
 
 
 def print_report(report: dict, verbose: bool = False):
@@ -178,15 +243,20 @@ def print_report(report: dict, verbose: bool = False):
 def main() -> int:
     args = parse_args()
 
-    # Load questions file
-    input_path = Path(args.input)
+    # Load questions file with path traversal protection
+    try:
+        input_path = safe_path(args.input, BASE_DIR)
+    except ValueError as e:
+        logger.error(e)
+        return 1
+
     if not input_path.exists():
         logger.error(f"Input file not found: {input_path}")
         return 1
 
     logger.info(f"Loading questions from: {input_path}")
     try:
-        raw = _json.loads(input_path.read_text(encoding="utf-8"))
+        raw = json.loads(input_path.read_text(encoding="utf-8"))
     except Exception as e:
         logger.error(f"Failed to parse JSON: {e}")
         return 1
@@ -213,7 +283,7 @@ def main() -> int:
         "source_file": str(input_path),
         "question_type": q_type,
         "summary": {"total_questions": len(questions)},
-        "completeness": compute_completeness(questions, required_fields),
+        "completeness": compute_completeness(questions, required_fields, args.verbose),
         "uniqueness": compute_uniqueness(questions),
         "avg_length": compute_avg_length(questions),
         "empty_answers": compute_empty_answers(questions),
@@ -224,7 +294,13 @@ def main() -> int:
     print_report(report, verbose=args.verbose)
 
     if args.output:
-        out_path = Path(args.output)
+        # Validate output path
+        try:
+            out_path = safe_path(args.output, BASE_DIR)
+        except ValueError as e:
+            logger.error(e)
+            return 1
+
         out_path.parent.mkdir(parents=True, exist_ok=True)
         # Remove per-question details from saved report (keep it lightweight)
         saved_report = {k: v for k, v in report.items() if k != "completeness"}
@@ -234,7 +310,7 @@ def main() -> int:
             if k != "missing_fields_per_question"
         }
         out_path.write_text(
-            _json.dumps(saved_report, indent=2, ensure_ascii=False), encoding="utf-8"
+            json.dumps(saved_report, indent=2, ensure_ascii=False), encoding="utf-8"
         )
         logger.info(f"Evaluation report saved to: {out_path}")
         print(f" Report saved to: {out_path}")

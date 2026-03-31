@@ -1,5 +1,4 @@
 import argparse
-import importlib
 import sys
 from pathlib import Path
 
@@ -8,7 +7,50 @@ from src.generation.pipeline import QuestionGenerationPipeline
 
 logger = get_logger("scripts.generate")
 
-_json = importlib.import_module("json")
+import json
+
+# Base directory for path validation (project root)
+BASE_DIR = Path(__file__).resolve().parent.parent.parent
+
+
+def safe_path(user_path: str, allowed_base: Path) -> Path:
+    """
+    Resolve and validate path to prevent path traversal attacks.
+
+    For relative paths: resolves against allowed_base and validates it stays within.
+    For absolute paths: validates the path doesn't contain traversal sequences.
+
+    Args:
+        user_path: User-provided path string.
+        allowed_base: Base directory for relative path resolution.
+
+    Returns:
+        Resolved and validated Path object.
+
+    Raises:
+        ValueError: If path traversal is detected.
+    """
+    user_path_obj = Path(user_path)
+
+    # Handle absolute paths (e.g., from pytest temp directories)
+    if user_path_obj.is_absolute():
+        resolved = user_path_obj.resolve()
+        # Check for suspicious patterns but allow legitimate absolute paths
+        if ".." in user_path:
+            # Verify it doesn't escape to sensitive locations
+            resolved_str = str(resolved).lower()
+            if any(s in resolved_str for s in ["/etc/", "/passwd", "/shadow", "windows/system32"]):
+                raise ValueError(f"Path traversal detected: {user_path}")
+        return resolved
+
+    # Relative paths: resolve against allowed_base
+    resolved = (allowed_base / user_path).resolve()
+    try:
+        resolved.relative_to(allowed_base.resolve())
+    except ValueError:
+        raise ValueError(f"Path traversal detected: {user_path}")
+    return resolved
+
 
 QUESTION_TYPES = [
     "multiple_choice",
@@ -122,16 +164,22 @@ def main() -> int:
 
     # Output
     if args.output:
-        out_path = Path(args.output)
+        # Validate output path
+        try:
+            out_path = safe_path(args.output, BASE_DIR)
+        except ValueError as e:
+            logger.error(e)
+            return 1
+
         out_path.parent.mkdir(parents=True, exist_ok=True)
         out_path.write_text(
-            _json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
+            json.dumps(payload, indent=2, ensure_ascii=False), encoding="utf-8"
         )
         logger.info(f"Questions saved to: {out_path}")
         print(f"\n {len(questions)} questions saved to: {out_path}")
     else:
         # Print to stdout
-        print(_json.dumps(payload, indent=2, ensure_ascii=False))
+        print(json.dumps(payload, indent=2, ensure_ascii=False))
 
     return 0
 

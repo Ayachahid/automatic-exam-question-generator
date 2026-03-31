@@ -555,7 +555,7 @@ class TestComputeCompleteness:
         from src.scripts.evaluate import compute_completeness
 
         questions = [{"question": "Q?"}, {"question": "Q?", "answer": "A"}]
-        result = compute_completeness(questions, ["question", "answer"])
+        result = compute_completeness(questions, ["question", "answer"], verbose=True)
         assert result["missing_fields_per_question"][0] == ["answer"]
         assert result["missing_fields_per_question"][1] == []
 
