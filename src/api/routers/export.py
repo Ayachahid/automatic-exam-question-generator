@@ -35,7 +35,14 @@ def _format_questions_txt(questions: list) -> str:
             for opt in q["options"]:
                 output.append(f"    - {opt}")
 
-        output.append(f"  Answer: {q.get('answer', 'N/A')}")
+        # Normalize answer for True/False questions
+        answer = q.get("answer", "N/A")
+        if isinstance(answer, (int, str)) and str(answer).lower() in ["0", "false", "f"]:
+            answer = "False"
+        elif isinstance(answer, (int, str)) and str(answer).lower() in ["1", "true", "t"]:
+            answer = "True"
+
+        output.append(f"  Answer: {answer}")
 
         if q.get("explanation"):
             output.append(f"  Explanation: {q['explanation']}")
@@ -132,7 +139,15 @@ def _generate_pdf_content(questions: list) -> bytes:
             story.append(options_table)
 
         story.append(Spacer(1, 0.1 * inch))
-        story.append(Paragraph(f"<b>Answer:</b> {q.get('answer', 'N/A')}", normal_style))
+
+        # Normalize answer for True/False questions
+        answer = q.get("answer", "N/A")
+        if isinstance(answer, (int, str)) and str(answer).lower() in ["0", "false", "f"]:
+            answer = "False"
+        elif isinstance(answer, (int, str)) and str(answer).lower() in ["1", "true", "t"]:
+            answer = "True"
+
+        story.append(Paragraph(f"<b>Answer:</b> {answer}", normal_style))
 
         if q.get("explanation"):
             story.append(Spacer(1, 0.1 * inch))
