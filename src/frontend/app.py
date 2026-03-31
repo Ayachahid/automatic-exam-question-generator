@@ -19,7 +19,13 @@ with st.sidebar:
 
     question_type = st.selectbox(
         "Question Type",
-        options=["multiple_choice", "short_answer", "true_false", "essay"],
+        options=[
+            "multiple_choice",
+            "short_answer",
+            "true_false",
+            "essay",
+            "scenario_based",
+        ],
         index=0,
         format_func=lambda x: x.replace("_", " ").title(),
     )
@@ -175,6 +181,14 @@ if st.session_state.questions:
     for i, q in enumerate(st.session_state.questions, 1):
         with st.container():
             st.markdown(f"**{i}. {q['question']}**")
+
+            # Display scenario context for scenario_based questions
+            if question_type == "scenario_based" and q.get("scenario"):
+                st.info(f"📖 **Scenario:**\n{q['scenario']}")
+
+            # Display concepts tested (for scenario_based or if present)
+            if q.get("concepts_tested"):
+                st.caption(f"🎯 **Concepts tested:** {', '.join(q['concepts_tested'])}")
 
             # Show Options for MCQs
             if q.get("options") and question_type == "multiple_choice":
