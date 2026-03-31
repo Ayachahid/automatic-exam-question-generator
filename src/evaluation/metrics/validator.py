@@ -142,9 +142,11 @@ class QuestionValidator:
                         f"got {len(options)}"
                     )
                 # Answer must be a valid option letter or option text
+                # Only check if answer is non-empty (empty already caught above)
                 valid_letters = {"A", "B", "C", "D"}
                 if (
-                    answer_str.upper() not in valid_letters
+                    answer_str
+                    and answer_str.upper() not in valid_letters
                     and answer_str not in options
                 ):
                     warnings.append(
@@ -214,19 +216,21 @@ class QuestionValidator:
         seen_questions: dict[str, int] = {}
         for i, q in enumerate(questions):
             text = q.get("question", "").strip().lower()
+
+            # Always validate the question fully
+            result = self.validate_one(q, index=i)
+
+            # Check for duplicates and add error if found
             if text in seen_questions:
-                # Mark current as duplicate
-                dup_result = QuestionValidationResult(
-                    index=i,
-                    is_valid=False,
-                    errors=[
-                        f"Duplicate question (same as index {seen_questions[text]})"
-                    ],
+                result.errors.append(
+                    f"Duplicate question (same as index {seen_questions[text]})"
                 )
-                results.append(dup_result)
+                result.is_valid = False
+
             else:
                 seen_questions[text] = i
-                results.append(self.validate_one(q, index=i))
+
+            results.append(result)
 
         valid_count = sum(1 for r in results if r.is_valid)
         invalid_count = len(results) - valid_count
