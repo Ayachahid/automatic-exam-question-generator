@@ -19,7 +19,13 @@ with st.sidebar:
 
     question_type = st.selectbox(
         "Question Type",
-        options=["multiple_choice", "short_answer", "true_false", "essay"],
+        options=[
+            "multiple_choice",
+            "short_answer",
+            "true_false",
+            "essay",
+            "scenario_based",
+        ],
         index=0,
         format_func=lambda x: x.replace("_", " ").title(),
     )

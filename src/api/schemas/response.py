@@ -11,6 +11,13 @@ class QuestionResponse(BaseModel):
     explanation: Optional[str] = Field(
         None, description="Explanation for the correct answer."
     )
+    scenario: Optional[str] = Field(
+        None, description="Realistic context paragraph (scenario_based only)."
+    )
+    concepts_tested: Optional[List[str]] = Field(
+        None,
+        description="Key concepts assessed by this question (scenario_based only).",
+    )
 
 
 class GenerationResponse(BaseModel):
