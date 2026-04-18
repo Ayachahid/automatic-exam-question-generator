@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, BackgroundTasks
 from typing import List
 from src.api.schemas.kb import IndexRequest, IndexResponse, RAGGenerateRequest, KBResetResponse
 from src.api.schemas.response import GenerationResponse, QuestionResponse
@@ -12,14 +12,15 @@ logger = get_logger("api.kb")
 @router.post("/index", response_model=IndexResponse)
 async def index_documents(
     request: IndexRequest,
+    background_tasks: BackgroundTasks,
     pipeline: RAGQuestionGenerationPipeline = Depends(get_rag_pipeline)
 ):
     """
-    Index multiple files into the knowledge base.
+    Index multiple files into the knowledge base in the background.
     """
     logger.info(f"Index request for {len(request.file_paths)} files")
     try:
-        pipeline.index_files(request.file_paths)
+        background_tasks.add_task(pipeline.index_files, request.file_paths)
         return IndexResponse(
             message="Successfully indexed documents",
             indexed_files=request.file_paths,

@@ -2,20 +2,20 @@ import { useState, useEffect } from 'react';
 import SettingsSidebar from './components/SettingsSidebar';
 import GeneratePage from './pages/GeneratePage';
 import KnowledgeBasePage from './pages/KnowledgeBasePage';
+import DocumentsPage from './pages/DocumentsPage';
 import { 
   Search, 
   SlidersHorizontal,
   BrainCircuit,
   Database,
-  History,
-  Settings,
+  Library,
   Sparkles
 } from 'lucide-react';
 import { cn } from './lib/utils';
 import { generateQuestions, generateRAGQuestions, listKBFiles, uploadFile, indexDocuments, resetKB } from './lib/api';
 import type { Question } from './components/QuestionCard';
 
-export type TabType = 'generate' | 'kb' | 'history' | 'settings';
+export type TabType = 'generate' | 'kb' | 'docs';
 
 function App() {
   const [currentTab, setCurrentTab] = useState<TabType>('generate');
@@ -43,13 +43,28 @@ function App() {
   };
 
   const handleIndexFiles = async (files: FileList) => {
-    setIndexing(true); setKbStatus('Indexing documents...');
+    setIndexing(true); setKbStatus('Uploading and indexing...');
     try {
-      const filePaths = [];
-      for (let i = 0; i < files.length; i++) { const data = await uploadFile(files[i]); filePaths.push(data.file_path); }
-      await indexDocuments(filePaths); await fetchKBFiles();
-      setKbStatus('Success: Library updated!'); setTimeout(() => setKbStatus(null), 3000);
-    } catch { setKbStatus('Error indexing files'); } finally { setIndexing(false); }
+      // Parallel upload for speed
+      const uploadPromises = Array.from(files).map((file) => uploadFile(file));
+      const uploadResults = await Promise.all(uploadPromises);
+      const filePaths = uploadResults.map((data) => data.file_path);
+      const newFileNames = Array.from(files).map((f) => f.name);
+
+      // Optimistic UI update so files show up instantly
+      setKbFiles((prev) => [...new Set([...prev, ...newFileNames])].sort());
+
+      // Start background indexing API
+      await indexDocuments(filePaths); 
+      
+      setKbStatus('Success: Documents added!'); 
+      setTimeout(() => setKbStatus(null), 3000);
+    } catch { 
+      setKbStatus('Error analyzing files'); 
+      setTimeout(() => setKbStatus(null), 3000);
+    } finally { 
+      setIndexing(false); 
+    }
   };
 
   const handleResetKB = async () => {
@@ -63,11 +78,15 @@ function App() {
       if (currentTab === 'generate') {
         if (!filePath && !rawText.trim()) { setError('Please upload a file or paste text first.'); setLoading(false); return; }
         const payload = { question_type: type, difficulty, num_questions: count, file_path: filePath, text: rawText.trim() || undefined };
-        const data = await generateQuestions(payload); setQuestions(data.questions);
+        const data = await generateQuestions(payload);
+        const mappedQuestions = data.questions.map((q: any) => ({ ...q, question_type: type }));
+        setQuestions(mappedQuestions);
       } else if (currentTab === 'kb') {
         if (!kbQuery.trim()) { setError('Please enter a subject or topic for the Knowledge Base.'); setLoading(false); return; }
         const payload = { query: kbQuery.trim(), question_type: type, difficulty, num_questions: count, n_results: 3 };
-        const data = await generateRAGQuestions(payload); setQuestions(data.questions);
+        const data = await generateRAGQuestions(payload);
+        const mappedQuestions = data.questions.map((q: any) => ({ ...q, question_type: type }));
+        setQuestions(mappedQuestions);
       }
     } catch { setError('Generation failed. Ensure backend is running.'); } finally { setLoading(false); }
   };
@@ -75,8 +94,7 @@ function App() {
   const navItems = [
     { id: 'generate', label: 'Generation', icon: BrainCircuit },
     { id: 'kb', label: 'Knowledge Base', icon: Database },
-    { id: 'history', label: 'History', icon: History },
-    { id: 'settings', label: 'Settings', icon: Settings },
+    { id: 'docs', label: 'Library', icon: Library },
   ];
 
   const renderContent = () => {
@@ -84,17 +102,11 @@ function App() {
       case 'generate':
         return <GeneratePage questions={questions} loading={loading} error={error} filePath={filePath} setFilePath={setFilePath} rawText={rawText} setRawText={setRawText} />;
       case 'kb':
-        return <KnowledgeBasePage questions={questions} loading={loading} query={kbQuery} setQuery={setKbQuery} status={kbStatus} kbFiles={kbFiles} onIndexFiles={handleIndexFiles} resetKBAction={handleResetKB} indexing={indexing} />;
+        return <KnowledgeBasePage questions={questions} loading={loading} query={kbQuery} setQuery={setKbQuery} status={kbStatus} />;
+      case 'docs':
+        return <DocumentsPage kbFiles={kbFiles} onIndexFiles={handleIndexFiles} resetKBAction={handleResetKB} indexing={indexing} />;
       default:
-        return (
-          <div className="flex flex-col items-center justify-center p-6 text-center max-w-4xl mx-auto min-h-[50vh]">
-            <div className="w-12 h-12 rounded-xl bg-surface-secondary flex items-center justify-center mb-3 border border-surface-border">
-              {currentTab === 'history' ? <History className="w-5 h-5 text-text-faint" /> : <Settings className="w-5 h-5 text-text-faint" />}
-            </div>
-            <h2 className="text-lg font-semibold text-text-main capitalize">{currentTab}</h2>
-            <p className="text-text-muted text-sm mt-1">This section is under development.</p>
-          </div>
-        );
+        return null;
     }
   };
 
@@ -151,7 +163,7 @@ function App() {
 
       <div className="flex flex-1 overflow-hidden w-full">
         {/* Sidebar */}
-        {showSettings && (
+        {showSettings && currentTab !== 'docs' && (
           <SettingsSidebar
             type={type} setType={setType}
             difficulty={difficulty} setDifficulty={setDifficulty}
