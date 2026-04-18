@@ -63,10 +63,19 @@ if "last_uploaded" not in st.session_state:
     st.session_state.last_uploaded = None
 if "gen_id" not in st.session_state:
     st.session_state.gen_id = 0
+if "kb_files" not in st.session_state:
+    st.session_state.kb_files = []
+    # Initial fetch of indexed files
+    try:
+        response = httpx.get(f"{API_BASE_URL}/kb/files")
+        if response.status_code == 200:
+            st.session_state.kb_files = response.json()
+    except Exception:
+        pass # Silently fail if API is not up yet
 
 # --- Main Interface ---
 
-tab1, tab2 = st.tabs(["📁 Upload File", "✍️ Paste Text"])
+tab1, tab2, tab3 = st.tabs(["📁 Upload File", "✍️ Paste Text", "🧠 Knowledge Base"])
 
 input_method = None
 input_data = None
@@ -107,6 +116,70 @@ with tab2:
         input_method = "text"
         input_data = raw_text
 
+with tab3:
+    st.subheader("🧠 Build your Knowledge Base")
+    st.markdown("Upload multiple documents to create a searchable knowledge base.")
+    
+    kb_files = st.file_uploader(
+        "Upload Documents for Knowledge Base", 
+        type=["pdf", "txt", "docx"], 
+        accept_multiple_files=True,
+        key="kb_uploader"
+    )
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        if st.button("🏗️ Index Documents", use_container_width=True):
+            if not kb_files:
+                st.warning("⚠️ Please upload at least one file to index.")
+            else:
+                with st.spinner("Indexing documents into ChromaDB..."):
+                    try:
+                        file_paths = []
+                        for kb_file in kb_files:
+                            files = {"file": (kb_file.name, kb_file.getvalue())}
+                            response = httpx.post(f"{API_BASE_URL}/upload/", files=files)
+                            response.raise_for_status()
+                            file_paths.append(response.json()["file_path"])
+                        
+                        # Call index endpoint
+                        idx_response = httpx.post(
+                            f"{API_BASE_URL}/kb/index", 
+                            json={"file_paths": file_paths},
+                            timeout=300.0
+                        )
+                        idx_response.raise_for_status()
+                        st.session_state.kb_files = [f.name for f in kb_files]
+                        st.success(f"✅ Successfully indexed {len(kb_files)} documents!")
+                    except Exception as e:
+                        st.error(f"❌ Indexing failed: {str(e)}")
+    
+    with col2:
+        if st.button("🗑️ Reset KB", use_container_width=True):
+            with st.spinner("Resetting knowledge base..."):
+                try:
+                    response = httpx.post(f"{API_BASE_URL}/kb/reset")
+                    response.raise_for_status()
+                    st.session_state.kb_files = []
+                    st.success("✅ Knowledge base reset successfully!")
+                except Exception as e:
+                    st.error(f"❌ Reset failed: {str(e)}")
+    
+    if st.session_state.kb_files:
+        st.info(f"📚 **Indexed Files:** {', '.join(st.session_state.kb_files)}")
+    
+    st.divider()
+    st.subheader("🔍 Generate from Knowledge Base")
+    kb_query = st.text_input(
+        "Enter the subject or topic you want to generate questions about",
+        placeholder="e.g., 'Backpropagation in Neural Networks' or 'RNN architectures'",
+        key="kb_query_input"
+    )
+    
+    if kb_query.strip():
+        input_method = "kb"
+        input_data = kb_query
+
 # --- Generation Trigger ---
 st.divider()
 generate_btn = st.button(
@@ -117,14 +190,18 @@ if generate_btn:
     st.session_state.questions = []  # Clear old results immediately
     st.session_state.gen_id += 1  # Force unique keys for new session
     payload = {}
+    endpoint = f"{API_BASE_URL}/generate/"
 
     # Determine source
     if input_method == "file" and st.session_state.file_path:
         payload["file_path"] = st.session_state.file_path
     elif input_method == "text" and input_data:
         payload["text"] = input_data
+    elif input_method == "kb" and input_data:
+        payload["query"] = input_data
+        endpoint = f"{API_BASE_URL}/kb/generate"
     else:
-        st.warning("⚠️ Please upload a file or paste text first.")
+        st.warning("⚠️ Please upload a file, paste text, or use the Knowledge Base first.")
         st.stop()
 
     # Add config
@@ -140,7 +217,7 @@ if generate_btn:
         try:
             # Using 127.0.0.1 directly to match backend binding
             response = httpx.post(
-                f"{API_BASE_URL}/generate/",
+                endpoint,
                 json=payload,
                 timeout=600.0,  # Increased timeout for complex generations
                 follow_redirects=True,

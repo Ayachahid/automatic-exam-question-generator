@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from src.api.routers import upload, generate, export
+from src.api.routers import upload, generate, export, knowledge_base
 from src.core.logger import get_logger
 
 logger = get_logger("api.main")
@@ -25,6 +25,7 @@ app.add_middleware(
 app.include_router(upload.router, prefix="/api/v1/upload", tags=["Files"])
 app.include_router(generate.router, prefix="/api/v1/generate", tags=["Generation"])
 app.include_router(export.router, prefix="/api/v1/export", tags=["Export"])
+app.include_router(knowledge_base.router, prefix="/api/v1/kb", tags=["Knowledge Base"])
 
 
 @app.get("/health", tags=["System"])
