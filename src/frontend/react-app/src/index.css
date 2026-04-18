@@ -1,0 +1,103 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-background text-text-main font-sans antialiased;
+    min-height: 100vh;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight text-text-main;
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: #D4D1CB;
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: #B5B3AD;
+  }
+
+  ::selection {
+    background: rgba(217, 119, 87, 0.18);
+    color: #1A1918;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply text-white px-5 py-2.5 rounded-lg font-semibold transition-all duration-150 active:scale-[0.98] shadow-sm;
+    background: #D97757;
+  }
+  .btn-primary:hover {
+    background: #C4633F;
+    box-shadow: 0 2px 8px rgba(217, 119, 87, 0.25);
+  }
+  .btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+
+  .card {
+    @apply bg-surface rounded-xl border border-surface-border p-6 shadow-card;
+  }
+
+  .input {
+    @apply w-full px-3.5 py-2.5 rounded-lg outline-none transition-all duration-150 text-text-main placeholder:text-text-faint font-medium text-sm;
+    background: #FDFDFC;
+    border: 1px solid #E5E3DE;
+  }
+  .input:focus {
+    border-color: #D97757;
+    box-shadow: 0 0 0 3px rgba(217, 119, 87, 0.1);
+  }
+
+  select.input {
+    @apply cursor-pointer;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%238C8A84' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+    background-position: right 0.75rem center;
+    background-repeat: no-repeat;
+    background-size: 1.25em 1.25em;
+    padding-right: 2.5rem;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+  }
+
+  input[type="range"] {
+    @apply w-full h-1 rounded-full appearance-none cursor-pointer;
+    background: #E5E3DE;
+  }
+  input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #D97757;
+    box-shadow: 0 1px 4px rgba(217, 119, 87, 0.3);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  input[type="range"]::-webkit-slider-thumb:hover {
+    transform: scale(1.15);
+  }
+  input[type="range"]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border: none;
+    border-radius: 50%;
+    background: #D97757;
+    cursor: pointer;
+  }
+}

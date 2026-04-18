@@ -1,12 +1,14 @@
 # Automatic Exam Question Generator - Makefile
 
-.PHONY: install api frontend test lint format check clean help
+.PHONY: install api frontend stop-frontend restart-frontend test lint format check clean help
 
 help:
 	@echo "Available commands:"
 	@echo "  make install    - Install dependencies using uv"
 	@echo "  make api        - Run the FastAPI backend using uv run"
-	@echo "  make frontend   - Run the Streamlit frontend using uv run"
+	@echo "  make frontend   - Run the React frontend using npm run dev"
+	@echo "  make stop-frontend - Stop the React frontend (kills process on port 5173)"
+	@echo "  make restart-frontend - Stop and start the React frontend"
 	@echo "  make test       - Run pytest tests"
 	@echo "  make lint       - Run ruff linter"
 	@echo "  make format     - Format code with black"
@@ -20,7 +22,12 @@ api:
 	uv run python -m uvicorn src.api.main:app --reload --host 127.0.0.1 --port 8000
 
 frontend:
-	uv run streamlit run src/frontend/app.py --server.port 8501
+	cd src/frontend/react-app && npm run dev
+
+stop-frontend:
+	@powershell -Command "if (Get-NetTCPConnection -LocalPort 5173 -ErrorAction SilentlyContinue) { Stop-Process -Id (Get-NetTCPConnection -LocalPort 5173).OwningProcess -Force; echo 'Frontend stopped.' } else { echo 'Frontend is not running.' }"
+
+restart-frontend: stop-frontend frontend
 
 test:
 	uv run python -m pytest tests/ -v
