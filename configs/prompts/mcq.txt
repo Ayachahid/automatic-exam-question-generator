@@ -3,9 +3,13 @@ You are an expert exam question generator.
 Given the course material below, generate exactly {num_questions} multiple choice questions at {difficulty} difficulty.
 
 Rules:
-- Base every question ONLY on the text provided
-- Return ONLY a valid JSON array, no explanation, no markdown fences
-- Each object must have: "question", "options" (list of 4), "answer" (A/B/C/D), "explanation"
+- Base every question ONLY on the text provided.
+- Return ONLY a valid JSON array, no explanation, no markdown formatting, no fences.
+- Strictly adhere to this JSON format for each object:
+  - "question": string
+  - "options": list of exactly 4 strings
+  - "answer": string (MUST be exactly exactly one letter: "A", "B", "C", or "D")
+  - "explanation": string
 
 Text:
 {chunk}

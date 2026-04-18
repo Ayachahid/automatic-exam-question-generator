@@ -1,3 +1,4 @@
+import concurrent.futures
 from typing import List, Optional
 from src.data.loaders.registry import LoaderFactory
 from src.data.chunkers.registry import ChunkerFactory
@@ -71,25 +72,15 @@ class QuestionGenerationPipeline:
         logger.info(f"Processing {len(chunks)} chunks...")  # Debug print
 
         all_parsed_questions = []
+        import math
+
         num_chunks = len(chunks)
-        questions_per_chunk = max(1, num_questions // num_chunks)
-        remaining_questions = num_questions
-
-        for i, chunk in enumerate(chunks):
-            if remaining_questions <= 0:
-                break
-
-            logger.info(f"Processing chunk {i+1}/{num_chunks}")
-
-            # For the last chunk, take all remaining needed questions
-            current_num = (
-                remaining_questions if i == num_chunks - 1 else questions_per_chunk
-            )
-
-            logger.debug(f"Generating {current_num} questions for this chunk")
-
+            
+        def process_chunk(task_data):
+            idx, chunk_text, num_q = task_data
+            logger.info(f"Processing chunk {idx+1}/{num_chunks} for {num_q} questions")
             prompt = self.prompter.build_prompt(
-                chunk,
+                chunk_text,
                 question_type=(
                     question_type
                     if question_type is not None
@@ -100,18 +91,36 @@ class QuestionGenerationPipeline:
                     if difficulty is not None
                     else self.config.generation.difficulty
                 ),
-                num_questions=current_num,
+                num_questions=num_q,
             )
-
             raw_output = self.provider.generate(prompt)
-            logger.debug("Parsing generated output")
-            parsed_questions = self.parser.parse(raw_output)
+            return self.parser.parse(raw_output)
 
-            # Only add what we need to reach the limit
-            parsed_questions = parsed_questions[:remaining_questions]
-            all_parsed_questions.extend(parsed_questions)
-            remaining_questions -= len(parsed_questions)
-            logger.debug(f"Remaining questions to generate: {remaining_questions}")
+        max_retries = 2
+        retry_count = 0
+        
+        while len(all_parsed_questions) < num_questions and retry_count <= max_retries:
+            needed = num_questions - len(all_parsed_questions)
+            active_chunks_count = min(num_chunks, needed)
+            
+            # Distribute EXACTLY the remaining needed questions across chunks
+            questions_per_chunk = math.ceil(needed / active_chunks_count)
+            
+            tasks = []
+            for i in range(active_chunks_count):
+                tasks.append((i, chunks[i], questions_per_chunk))
+                
+            with concurrent.futures.ThreadPoolExecutor(max_workers=min(5, len(tasks))) as executor:
+                # Map tasks directly so they run concurrently
+                results = executor.map(process_chunk, tasks)
+                
+                for parsed_questions in results:
+                    all_parsed_questions.extend(parsed_questions)
+                    
+            if len(all_parsed_questions) < num_questions:
+                logger.warning(f"Fell short. Have {len(all_parsed_questions)}/{num_questions}. Generating missing...")
+            
+            retry_count += 1
 
         logger.info(
             f"Pipeline finished. Total questions generated: {len(all_parsed_questions)}"
