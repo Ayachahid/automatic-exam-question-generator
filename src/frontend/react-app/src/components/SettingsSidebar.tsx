@@ -2,8 +2,6 @@ import React from 'react';
 import { 
   Settings2, 
   HelpCircle,
-  Sparkles,
-  Loader2,
 } from 'lucide-react';
 import { cn } from '../lib/utils';
 import type { TabType } from '../App';
@@ -15,8 +13,6 @@ interface SettingsSidebarProps {
   setDifficulty: (val: string) => void;
   count: number;
   setCount: (val: number) => void;
-  onGenerate: () => void;
-  loading: boolean;
   isOpen: boolean;
   currentTab: TabType;
 }
@@ -25,8 +21,6 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
   type, setType, 
   difficulty, setDifficulty, 
   count, setCount, 
-  onGenerate, 
-  loading,
   isOpen,
   currentTab,
 }) => {
@@ -42,19 +36,6 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
         </h2>
       </div>
 
-      {/* Generate */}
-      <div className="p-4 border-b border-surface-border">
-        <button 
-          id="sidebar-generate-btn"
-          className="btn-primary w-full h-9 flex items-center justify-center gap-2 text-[13px]"
-          onClick={onGenerate}
-          disabled={loading}
-        >
-          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-          <span className="font-semibold">Generate Questions</span>
-        </button>
-      </div>
-
       {/* Settings */}
       <div className="p-4 space-y-5 flex-1">
         <label className="text-[10px] font-semibold text-text-muted uppercase tracking-[0.12em]">Settings</label>
@@ -66,10 +47,14 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
           </div>
           <select id="question-type-select" className="input text-[13px] h-9" value={type} onChange={(e) => setType(e.target.value)}>
             <option value="multiple_choice">Multiple Choice</option>
-            <option value="short_answer">Short Answer</option>
             <option value="true_false">True / False</option>
-            <option value="essay">Essay</option>
-            <option value="scenario_based">Scenario Based</option>
+            {currentTab !== 'exam' && (
+              <>
+                <option value="short_answer">Short Answer</option>
+                <option value="essay">Essay</option>
+                <option value="scenario_based">Scenario Based</option>
+              </>
+            )}
           </select>
         </div>
 

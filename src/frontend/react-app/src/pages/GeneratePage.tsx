@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { Upload, FileText, Loader2, AlertCircle, Type, FileUp, Sparkles } from 'lucide-react';
+import { Upload, FileText, Loader2, AlertCircle, Type, FileUp, Sparkles, Database, Search } from 'lucide-react';
 import { uploadFile } from '../lib/api';
 import QuestionCard from '../components/QuestionCard';
 import type { Question } from '../components/QuestionCard';
 import { cn } from '../lib/utils';
 
 interface GeneratePageProps {
+  onGenerate: () => void;
   questions: Question[];
   loading: boolean;
   error: string | null;
@@ -13,15 +14,34 @@ interface GeneratePageProps {
   setFilePath: (path: string | null) => void;
   rawText: string;
   setRawText: (text: string) => void;
+  kbQuery: string;
+  setKbQuery: (query: string) => void;
+  inputMethod: 'file' | 'text' | 'kb';
+  setInputMethod: (val: 'file' | 'text' | 'kb') => void;
 }
 
-type InputMethod = 'file' | 'text';
-
 const GeneratePage: React.FC<GeneratePageProps> = ({
-  questions, loading, error, filePath, setFilePath, rawText, setRawText,
+  onGenerate, questions, loading, error, filePath, setFilePath, rawText, setRawText, kbQuery, setKbQuery, inputMethod, setInputMethod
 }) => {
   const [fileName, setFileName] = useState<string | null>(null);
-  const [inputMethod, setInputMethod] = useState<InputMethod>('file');
+  
+  const [exportName, setExportName] = useState('exam_questions');
+  const [exportFormat, setExportFormat] = useState('pdf');
+  const [exporting, setExporting] = useState(false);
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const { exportQuestions } = await import('../lib/api');
+      const blob = await exportQuestions({ questions, format: exportFormat, filename: exportName || 'exam_questions' });
+      const url = window.URL.createObjectURL(new Blob([blob]));
+      const a = document.createElement('a'); a.href = url; a.download = `${exportName || 'exam_questions'}.${exportFormat}`; a.click();
+    } catch (e) {
+      console.error('Export failed', e);
+    } finally {
+      setExporting(false);
+    }
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFile = e.target.files?.[0];
@@ -52,6 +72,13 @@ const GeneratePage: React.FC<GeneratePageProps> = ({
           >
             <Type className="w-3.5 h-3.5" />Text
           </button>
+          <button id="input-method-kb-btn" onClick={() => setInputMethod('kb')}
+            className={cn("flex items-center gap-1.5 px-3 py-1 rounded-md text-[12px] font-medium transition-colors",
+              inputMethod === 'kb' ? "bg-surface text-text-main shadow-card" : "text-text-muted hover:text-text-main"
+            )}
+          >
+            <Database className="w-3.5 h-3.5" />Knowledge Base
+          </button>
         </div>
       </div>
 
@@ -74,21 +101,48 @@ const GeneratePage: React.FC<GeneratePageProps> = ({
               </div>
             )}
           </div>
-        ) : (
+        ) : inputMethod === 'text' ? (
           <div className="card p-0 overflow-hidden">
             <textarea id="text-input-area" placeholder="Paste material here..."
               className="w-full min-h-[160px] text-[14px] resize-none p-4 leading-relaxed outline-none bg-surface"
               value={rawText} onChange={(e) => setRawText(e.target.value)}
             />
           </div>
+        ) : (
+          <div className="card p-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-faint" />
+              <input id="kb-search-input" type="text" placeholder="Search knowledge base topics..."
+                className="input pl-9 h-11 text-[14px] font-medium w-full shadow-sm" value={kbQuery} onChange={(e) => setKbQuery(e.target.value)}
+              />
+            </div>
+            <p className="text-[12px] text-text-muted mt-3 ml-1">
+              The system will search your uploaded documents to create questions.
+            </p>
+          </div>
         )}
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 p-3 rounded-lg text-[13px] font-medium animate-slide-up bg-danger-bg border border-danger-border text-danger-text">
+        <div className="flex items-center gap-2 p-3 rounded-lg text-[13px] font-medium animate-slide-up bg-danger-bg border border-danger-border text-danger-text pb-4">
           <AlertCircle className="w-4 h-4 shrink-0" />{error}
         </div>
       )}
+
+      {/* Action */}
+      <div className="flex justify-end pt-2">
+        <button 
+          onClick={onGenerate} 
+          disabled={loading || 
+            (inputMethod !== 'kb' && !filePath && !rawText.trim()) ||
+            (inputMethod === 'kb' && !kbQuery.trim())
+          }
+          className="btn-primary flex items-center justify-center gap-2 text-[14px] h-10 px-6 shadow-sm w-full sm:w-auto"
+        >
+          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          <span className="font-semibold">Generate Questions</span>
+        </button>
+      </div>
 
       {/* Results */}
       <div>
@@ -105,6 +159,44 @@ const GeneratePage: React.FC<GeneratePageProps> = ({
             </div>
             <div className="grid grid-cols-1 gap-3">
               {questions.map((q, i) => <QuestionCard key={i} question={q} index={i + 1} />)}
+            </div>
+            
+            {/* Export Actions */}
+            <div className="mt-8 pt-6 border-t border-surface-border animate-fade-in flex flex-col sm:flex-row items-end gap-3 bg-surface-secondary p-4 rounded-xl border">
+              <div className="flex-1 w-full space-y-1.5">
+                <label className="text-[11px] font-semibold text-text-secondary uppercase tracking-wide">Filename</label>
+                <input 
+                  type="text" 
+                  id="export-filename"
+                  className="input h-9 text-[13px] w-full" 
+                  value={exportName} 
+                  onChange={(e) => setExportName(e.target.value)}
+                  placeholder="exam_questions"
+                />
+              </div>
+              
+              <div className="w-full sm:w-32 space-y-1.5">
+                <label className="text-[11px] font-semibold text-text-secondary uppercase tracking-wide">Format</label>
+                <select 
+                  id="export-format"
+                  className="input h-9 text-[13px] w-full"
+                  value={exportFormat}
+                  onChange={(e) => setExportFormat(e.target.value)}
+                >
+                  <option value="pdf">PDF</option>
+                  <option value="txt">TXT</option>
+                  <option value="json">JSON</option>
+                </select>
+              </div>
+
+              <button 
+                onClick={handleExport}
+                disabled={exporting}
+                className="btn-primary h-9 px-6 flex items-center justify-center gap-2 text-[13px] w-full sm:w-auto shadow-sm shrink-0"
+              >
+                {exporting ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileUp className="w-4 h-4" />}
+                <span className="font-semibold">Export File</span>
+              </button>
             </div>
           </div>
         ) : (

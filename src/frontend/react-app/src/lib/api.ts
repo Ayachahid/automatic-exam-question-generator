@@ -45,4 +45,11 @@ export const resetKB = async () => {
   return response.data;
 };
 
+export const exportQuestions = async (payload: { questions: any[], format: string, filename?: string }) => {
+  const response = await api.post('/export/', payload, {
+    responseType: 'blob',
+  });
+  return response.data;
+};
+
 export default api;
