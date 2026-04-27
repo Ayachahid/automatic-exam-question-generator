@@ -14,7 +14,7 @@ class RAGGenerateRequest(BaseModel):
     query: str = Field(..., description="The subject or topic to generate questions about")
     question_type: QuestionType = Field(default=QuestionType.MULTIPLE_CHOICE)
     difficulty: Difficulty = Field(default=Difficulty.MEDIUM)
-    num_questions: int = Field(default=5, ge=1, le=20)
+    num_questions: int = Field(default=5, ge=1, le=50)
     n_results: int = Field(default=3, ge=1, le=10, description="Number of context chunks to retrieve")
 
 class KBResetResponse(BaseModel):

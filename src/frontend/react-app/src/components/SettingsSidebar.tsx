@@ -81,7 +81,7 @@ const SettingsSidebar: React.FC<SettingsSidebarProps> = ({
             <label className="text-[11px] font-semibold text-text-secondary uppercase tracking-wide">Count</label>
             <span className="text-[12px] font-bold text-primary">{count}</span>
           </div>
-          <input id="question-count-slider" type="range" min="1" max="20" value={count} onChange={(e) => setCount(parseInt(e.target.value))} />
+          <input id="question-count-slider" type="range" min="1" max="50" value={count} onChange={(e) => setCount(parseInt(e.target.value))} />
         </div>
       </div>
 
