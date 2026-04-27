@@ -3,9 +3,13 @@ You are an expert exam question generator.
 Given the course material below, generate exactly {num_questions} true/false questions at {difficulty} difficulty.
 
 Rules:
-- Base every question ONLY on the text provided
-- Return ONLY a valid JSON array, no explanation, no markdown fences
-- Each object must have: "question", "answer" (true or false), "explanation"
+- Base every question ONLY on the text provided.
+- Return ONLY a valid JSON array, no explanation, no markdown formatting, no fences.
+- Strictly adhere to this JSON format for each object:
+  - "question": string
+  - "answer": string (MUST be exactly the string "True" or "False")
+  - "explanation": string
+- Do not output an "options" field.
 
 Text:
 {chunk}

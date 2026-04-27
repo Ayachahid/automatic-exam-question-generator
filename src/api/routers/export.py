@@ -61,7 +61,7 @@ def _generate_pdf_content(questions: list) -> bytes:
         from reportlab.lib.pagesizes import letter
         from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
         from reportlab.lib.units import inch
-        from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, Table, TableStyle
+        from reportlab.platypus import Paragraph, SimpleDocTemplate, Spacer, HRFlowable
     except ImportError:
         raise ImportError(
             "reportlab is required for PDF export. Install with: pip install reportlab"
@@ -71,74 +71,122 @@ def _generate_pdf_content(questions: list) -> bytes:
     doc = SimpleDocTemplate(
         buffer,
         pagesize=letter,
-        rightMargin=0.75 * inch,
-        leftMargin=0.75 * inch,
-        topMargin=0.75 * inch,
-        bottomMargin=0.75 * inch,
+        rightMargin=1 * inch,
+        leftMargin=1 * inch,
+        topMargin=1 * inch,
+        bottomMargin=1 * inch,
     )
 
     styles = getSampleStyleSheet()
+    
     title_style = ParagraphStyle(
         "CustomTitle",
         parent=styles["Heading1"],
-        fontSize=18,
-        spaceAfter=12,
-        alignment=1,  # Center
+        fontSize=24,
+        textColor=colors.HexColor("#0f172a"),
+        spaceAfter=8,
+        fontName="Helvetica-Bold",
     )
-    normal_style = ParagraphStyle("CustomNormal", parent=styles["Normal"], fontSize=11)
+    
+    date_style = ParagraphStyle(
+        "DateStyle", 
+        parent=styles["Normal"], 
+        fontSize=10, 
+        textColor=colors.HexColor("#64748b"),
+        spaceAfter=36,
+    )
+    
     heading_style = ParagraphStyle(
-        "CustomHeading", parent=styles["Heading2"], fontSize=13, spaceAfter=6
+        "CustomHeading", 
+        parent=styles["Heading2"], 
+        fontSize=14, 
+        textColor=colors.HexColor("#2563eb"),
+        spaceBefore=16,
+        spaceAfter=8,
+        fontName="Helvetica-Bold",
+    )
+    
+    normal_style = ParagraphStyle(
+        "CustomNormal", 
+        parent=styles["Normal"], 
+        fontSize=11, 
+        textColor=colors.HexColor("#334155"),
+        leading=16, # Line height
+        spaceAfter=8,
+    )
+
+    option_style = ParagraphStyle(
+        "OptionStyle", 
+        parent=normal_style,
+        leftIndent=24,
+        textColor=colors.HexColor("#1e293b"),
+        spaceAfter=6,
+    )
+
+    meta_style = ParagraphStyle(
+        "MetaStyle", 
+        parent=normal_style,
+        fontSize=10,
+        textColor=colors.HexColor("#475569"),
+        leftIndent=12,
+        spaceBefore=6,
+        spaceAfter=6,
+        borderPadding=8,
+        backColor=colors.HexColor("#f8fafc"),
+        borderColor=colors.HexColor("#e2e8f0"),
+        borderWidth=1,
+        borderRadius=4,
+    )
+
+    answer_style = ParagraphStyle(
+        "AnswerStyle", 
+        parent=normal_style,
+        fontName="Helvetica-Bold",
+        textColor=colors.HexColor("#059669"),
+        spaceBefore=8,
+    )
+
+    explanation_style = ParagraphStyle(
+        "ExplanationStyle", 
+        parent=normal_style,
+        fontName="Helvetica-Oblique",
+        textColor=colors.HexColor("#475569"),
+        leftIndent=12,
+        spaceBefore=4,
     )
 
     story = []
 
     # Title
-    story.append(Paragraph("Generated Exam Questions", title_style))
+    story.append(Paragraph("Exam Questions", title_style))
     story.append(
         Paragraph(
-            f"Exported: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}",
-            ParagraphStyle("DateStyle", parent=styles["Normal"], fontSize=9, alignment=1),
+            f"Generated on {datetime.now().strftime('%B %d, %Y at %I:%M %p')}",
+            date_style,
         )
     )
-    story.append(Spacer(1, 0.25 * inch))
 
     # Questions
     for i, q in enumerate(questions, 1):
+        # Divider line in front of the question
+        story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#cbd5e1"), spaceBefore=10, spaceAfter=14))
+        
         story.append(Paragraph(f"Question {i}", heading_style))
         story.append(Paragraph(q.get("question", "N/A"), normal_style))
 
         if q.get("scenario"):
-            story.append(Spacer(1, 0.1 * inch))
-            story.append(Paragraph(f"<b>Scenario:</b> {q['scenario']}", normal_style))
+            story.append(Paragraph(f"<b>Scenario Context:</b><br/>{q['scenario']}", meta_style))
 
         if q.get("concepts_tested"):
             story.append(
-                Paragraph(
-                    f"<b>Concepts tested:</b> {', '.join(q['concepts_tested'])}",
-                    normal_style,
-                )
+                Paragraph(f"<b>Concepts:</b> {', '.join(q['concepts_tested'])}", meta_style)
             )
 
         if q.get("options"):
-            story.append(Spacer(1, 0.1 * inch))
-            options_data = [[opt] for opt in q["options"]]
-            options_table = Table(options_data, colWidths=[5 * inch])
-            options_table.setStyle(
-                TableStyle(
-                    [
-                        ("BACKGROUND", (0, 0), (-1, -1), colors.lightgrey),
-                        ("GRID", (0, 0), (-1, -1), 0.5, colors.black),
-                        ("VALIGN", (0, 0), (-1, -1), "TOP"),
-                        ("LEFTPADDING", (0, 0), (-1, -1), 6),
-                        ("RIGHTPADDING", (0, 0), (-1, -1), 6),
-                        ("TOPPADDING", (0, 0), (-1, -1), 6),
-                        ("BOTTOMPADDING", (0, 0), (-1, -1), 6),
-                    ]
-                )
-            )
-            story.append(options_table)
-
-        story.append(Spacer(1, 0.1 * inch))
+            story.append(Spacer(1, 0.05 * inch))
+            for opt in q["options"]:
+                story.append(Paragraph(f"•  {opt}", option_style))
+            story.append(Spacer(1, 0.05 * inch))
 
         # Normalize answer for True/False questions
         answer = q.get("answer", "N/A")
@@ -147,13 +195,10 @@ def _generate_pdf_content(questions: list) -> bytes:
         elif isinstance(answer, (int, str)) and str(answer).lower() in ["1", "true", "t"]:
             answer = "True"
 
-        story.append(Paragraph(f"<b>Answer:</b> {answer}", normal_style))
+        story.append(Paragraph(f"Correct Answer: {answer}", answer_style))
 
         if q.get("explanation"):
-            story.append(Spacer(1, 0.1 * inch))
-            story.append(
-                Paragraph(f"<b>Explanation:</b> {q['explanation']}", normal_style)
-            )
+            story.append(Paragraph(f"Explanation: {q['explanation']}", explanation_style))
 
         story.append(Spacer(1, 0.2 * inch))
 
