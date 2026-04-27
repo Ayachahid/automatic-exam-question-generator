@@ -15,12 +15,27 @@ Located in `src/generation/`, this is the "brain" of the application. It contain
 - **Pipelines:** Orchestrators that manage the flow of data.
 - **Question Logic:** Definitions and validation for various question formats.
 - **Prompter:** Manages the injection of context into LLM templates.
-
 ### Data Layer
 Located in `src/data/`, this layer handles everything related to raw document processing:
 - **Loaders:** Extracting text from PDF, DOCX, TXT, and PPTX.
 - **Chunkers:** Splitting text to respect LLM token limits.
 - **Vector Store:** Managing document embeddings for RAG (Retrieval-Augmented Generation) using ChromaDB.
+
+## 2. Advanced Technical Components
+
+### LLM Provider Abstraction (`src/providers/`)
+The system uses a `BaseProvider` interface to decouple the generation logic from specific LLM vendors.
+- **Ollama Provider:** Handles local inference via the Ollama API.
+- **Registry Pattern:** New providers (OpenAI, Anthropic, etc.) can be added by implementing the `generate()` method and registering the class in `src/providers/registry.py`.
+
+### Custom Exception Hierarchy (`src/core/exceptions.py`)
+To ensure robust error handling, the project uses a hierarchy of custom exceptions:
+- `ExamGeneratorError`: The base class for all project-specific errors.
+- `LoaderError`: Raised when a document fails to load.
+- `LLMError`: Raised when the LLM provider fails or returns an empty response.
+- `ParserError`: Raised when the pipeline cannot convert raw LLM text into valid question models.
+
+## 3. Design Patterns
 
 ### Frontend (React & Streamlit)
 - **React App:** A modern, high-performance UI (`src/frontend/react-app/`) providing a rich user experience, including "Exam Mode".

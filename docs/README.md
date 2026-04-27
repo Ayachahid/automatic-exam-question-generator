@@ -20,6 +20,14 @@ Welcome to the **Automatic Exam Question Generator** technical documentation. Th
     - FastAPI endpoint definitions.
     - React frontend structure and "Exam Mode".
 
+5.  **[Configuration & Prompts](configuration.md)**
+    - Tuning LLM behavior and prompt engineering.
+    - Chunker and vector store settings.
+
+6.  **[Development Guide](development.md)**
+    - Environment setup, make commands, and testing strategy.
+    - Contribution guidelines.
+
 ## 🛠️ Quick Start for Developers
 
 - **Adding a Loader:** See `src/data/loaders/`.
