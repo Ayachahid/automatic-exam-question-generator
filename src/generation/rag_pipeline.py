@@ -5,11 +5,12 @@ from src.core.logger import get_logger
 
 logger = get_logger("generation.rag_pipeline")
 
+
 class RAGQuestionGenerationPipeline(QuestionGenerationPipeline):
     def __init__(
-        self, 
-        config_path: str = "configs/config.yaml", 
-        vector_store_dir: str = "data/processed/chroma_db"
+        self,
+        config_path: str = "configs/config.yaml",
+        vector_store_dir: str = "data/processed/chroma_db",
     ):
         super().__init__(config_path=config_path)
         self.vector_store = VectorStore(persist_directory=vector_store_dir)
@@ -21,7 +22,7 @@ class RAGQuestionGenerationPipeline(QuestionGenerationPipeline):
         question_type: Optional[str] = None,
         difficulty: Optional[str] = None,
         num_questions: int = 5,
-        n_results: int = 3
+        n_results: int = 3,
     ) -> List[dict]:
         """
         Generate questions using RAG.
@@ -29,7 +30,7 @@ class RAGQuestionGenerationPipeline(QuestionGenerationPipeline):
         2. Use retrieved context to generate questions.
         """
         logger.info(f"Running RAG pipeline for query: '{query}'")
-        
+
         # 1. Retrieve context
         context_chunks = self.vector_store.query(query_text=query, n_results=n_results)
         if not context_chunks:
@@ -65,22 +66,20 @@ class RAGQuestionGenerationPipeline(QuestionGenerationPipeline):
     def index_files(self, file_paths: List[str]):
         """Index multiple files into the vector store."""
         logger.info(f"Indexing {len(file_paths)} files")
-        
+
         for file_path in file_paths:
             try:
                 # Load, clean, and chunk
                 raw_content = self.loader.get_loader(file_path).load(file_path)
                 clean_text = self.cleaner.clean(raw_content)
                 chunks = self.chunker.chunk(text=clean_text)
-                
+
                 # Prepare for vector store
                 metadatas = [{"source": file_path} for _ in chunks]
                 ids = [f"{file_path}_{i}" for i in range(len(chunks))]
-                
+
                 self.vector_store.add_documents(
-                    texts=chunks,
-                    metadatas=metadatas,
-                    ids=ids
+                    texts=chunks, metadatas=metadatas, ids=ids
                 )
                 logger.info(f"Successfully indexed: {file_path}")
             except Exception as e:

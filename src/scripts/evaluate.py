@@ -38,7 +38,10 @@ def safe_path(user_path: str, allowed_base: Path) -> Path:
         if ".." in user_path:
             # Verify it doesn't escape to sensitive locations
             resolved_str = str(resolved).lower()
-            if any(s in resolved_str for s in ["/etc/", "/passwd", "/shadow", "windows/system32"]):
+            if any(
+                s in resolved_str
+                for s in ["/etc/", "/passwd", "/shadow", "windows/system32"]
+            ):
                 raise ValueError(f"Path traversal detected: {user_path}")
         return resolved
 

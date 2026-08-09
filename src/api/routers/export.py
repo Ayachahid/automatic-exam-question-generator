@@ -37,9 +37,17 @@ def _format_questions_txt(questions: list) -> str:
 
         # Normalize answer for True/False questions
         answer = q.get("answer", "N/A")
-        if isinstance(answer, (int, str)) and str(answer).lower() in ["0", "false", "f"]:
+        if isinstance(answer, (int, str)) and str(answer).lower() in [
+            "0",
+            "false",
+            "f",
+        ]:
             answer = "False"
-        elif isinstance(answer, (int, str)) and str(answer).lower() in ["1", "true", "t"]:
+        elif isinstance(answer, (int, str)) and str(answer).lower() in [
+            "1",
+            "true",
+            "t",
+        ]:
             answer = "True"
 
         output.append(f"  Answer: {answer}")
@@ -78,7 +86,7 @@ def _generate_pdf_content(questions: list) -> bytes:
     )
 
     styles = getSampleStyleSheet()
-    
+
     title_style = ParagraphStyle(
         "CustomTitle",
         parent=styles["Heading1"],
@@ -87,36 +95,36 @@ def _generate_pdf_content(questions: list) -> bytes:
         spaceAfter=8,
         fontName="Helvetica-Bold",
     )
-    
+
     date_style = ParagraphStyle(
-        "DateStyle", 
-        parent=styles["Normal"], 
-        fontSize=10, 
+        "DateStyle",
+        parent=styles["Normal"],
+        fontSize=10,
         textColor=colors.HexColor("#64748b"),
         spaceAfter=36,
     )
-    
+
     heading_style = ParagraphStyle(
-        "CustomHeading", 
-        parent=styles["Heading2"], 
-        fontSize=14, 
+        "CustomHeading",
+        parent=styles["Heading2"],
+        fontSize=14,
         textColor=colors.HexColor("#2563eb"),
         spaceBefore=16,
         spaceAfter=8,
         fontName="Helvetica-Bold",
     )
-    
+
     normal_style = ParagraphStyle(
-        "CustomNormal", 
-        parent=styles["Normal"], 
-        fontSize=11, 
+        "CustomNormal",
+        parent=styles["Normal"],
+        fontSize=11,
         textColor=colors.HexColor("#334155"),
-        leading=16, # Line height
+        leading=16,  # Line height
         spaceAfter=8,
     )
 
     option_style = ParagraphStyle(
-        "OptionStyle", 
+        "OptionStyle",
         parent=normal_style,
         leftIndent=24,
         textColor=colors.HexColor("#1e293b"),
@@ -124,7 +132,7 @@ def _generate_pdf_content(questions: list) -> bytes:
     )
 
     meta_style = ParagraphStyle(
-        "MetaStyle", 
+        "MetaStyle",
         parent=normal_style,
         fontSize=10,
         textColor=colors.HexColor("#475569"),
@@ -139,7 +147,7 @@ def _generate_pdf_content(questions: list) -> bytes:
     )
 
     answer_style = ParagraphStyle(
-        "AnswerStyle", 
+        "AnswerStyle",
         parent=normal_style,
         fontName="Helvetica-Bold",
         textColor=colors.HexColor("#059669"),
@@ -147,7 +155,7 @@ def _generate_pdf_content(questions: list) -> bytes:
     )
 
     explanation_style = ParagraphStyle(
-        "ExplanationStyle", 
+        "ExplanationStyle",
         parent=normal_style,
         fontName="Helvetica-Oblique",
         textColor=colors.HexColor("#475569"),
@@ -169,17 +177,29 @@ def _generate_pdf_content(questions: list) -> bytes:
     # Questions
     for i, q in enumerate(questions, 1):
         # Divider line in front of the question
-        story.append(HRFlowable(width="100%", thickness=1.5, color=colors.HexColor("#cbd5e1"), spaceBefore=10, spaceAfter=14))
-        
+        story.append(
+            HRFlowable(
+                width="100%",
+                thickness=1.5,
+                color=colors.HexColor("#cbd5e1"),
+                spaceBefore=10,
+                spaceAfter=14,
+            )
+        )
+
         story.append(Paragraph(f"Question {i}", heading_style))
         story.append(Paragraph(q.get("question", "N/A"), normal_style))
 
         if q.get("scenario"):
-            story.append(Paragraph(f"<b>Scenario Context:</b><br/>{q['scenario']}", meta_style))
+            story.append(
+                Paragraph(f"<b>Scenario Context:</b><br/>{q['scenario']}", meta_style)
+            )
 
         if q.get("concepts_tested"):
             story.append(
-                Paragraph(f"<b>Concepts:</b> {', '.join(q['concepts_tested'])}", meta_style)
+                Paragraph(
+                    f"<b>Concepts:</b> {', '.join(q['concepts_tested'])}", meta_style
+                )
             )
 
         if q.get("options"):
@@ -190,15 +210,25 @@ def _generate_pdf_content(questions: list) -> bytes:
 
         # Normalize answer for True/False questions
         answer = q.get("answer", "N/A")
-        if isinstance(answer, (int, str)) and str(answer).lower() in ["0", "false", "f"]:
+        if isinstance(answer, (int, str)) and str(answer).lower() in [
+            "0",
+            "false",
+            "f",
+        ]:
             answer = "False"
-        elif isinstance(answer, (int, str)) and str(answer).lower() in ["1", "true", "t"]:
+        elif isinstance(answer, (int, str)) and str(answer).lower() in [
+            "1",
+            "true",
+            "t",
+        ]:
             answer = "True"
 
         story.append(Paragraph(f"Correct Answer: {answer}", answer_style))
 
         if q.get("explanation"):
-            story.append(Paragraph(f"Explanation: {q['explanation']}", explanation_style))
+            story.append(
+                Paragraph(f"Explanation: {q['explanation']}", explanation_style)
+            )
 
         story.append(Spacer(1, 0.2 * inch))
 
@@ -215,12 +245,16 @@ async def export_questions(request: ExportRequest):
     - **format**: Desired export format (json, pdf, txt)
     - **filename**: Optional custom filename
     """
-    logger.info(f"Exporting {len(request.questions)} questions in {request.format} format")
+    logger.info(
+        f"Exporting {len(request.questions)} questions in {request.format} format"
+    )
 
     if not request.questions:
         raise HTTPException(status_code=400, detail="No questions provided for export.")
 
-    filename = request.filename or f"exam_questions_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    filename = (
+        request.filename or f"exam_questions_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
+    )
 
     try:
         if request.format == ExportFormat.JSON:
@@ -228,7 +262,9 @@ async def export_questions(request: ExportRequest):
             return StreamingResponse(
                 io.BytesIO(json_bytes),
                 media_type="application/json",
-                headers={"Content-Disposition": f'attachment; filename="{filename}.json"'},
+                headers={
+                    "Content-Disposition": f'attachment; filename="{filename}.json"'
+                },
             )
 
         elif request.format == ExportFormat.TXT:
@@ -236,7 +272,9 @@ async def export_questions(request: ExportRequest):
             return StreamingResponse(
                 io.StringIO(content),
                 media_type="text/plain",
-                headers={"Content-Disposition": f'attachment; filename="{filename}.txt"'},
+                headers={
+                    "Content-Disposition": f'attachment; filename="{filename}.txt"'
+                },
             )
 
         elif request.format == ExportFormat.PDF:
@@ -244,7 +282,9 @@ async def export_questions(request: ExportRequest):
             return StreamingResponse(
                 io.BytesIO(pdf_bytes),
                 media_type="application/pdf",
-                headers={"Content-Disposition": f'attachment; filename="{filename}.pdf"'},
+                headers={
+                    "Content-Disposition": f'attachment; filename="{filename}.pdf"'
+                },
             )
 
     except ImportError as e:

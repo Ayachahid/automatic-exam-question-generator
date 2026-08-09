@@ -56,7 +56,9 @@ class GenerateRequest(BaseModel):
 
 class ExportRequest(BaseModel):
     questions: list = Field(..., description="List of questions to export.")
-    format: ExportFormat = Field(default=ExportFormat.JSON, description="Export format.")
+    format: ExportFormat = Field(
+        default=ExportFormat.JSON, description="Export format."
+    )
     filename: Optional[str] = Field(
         None, description="Custom filename for the exported file."
     )

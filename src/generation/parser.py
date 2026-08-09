@@ -40,12 +40,14 @@ class QuestionParser:
                 # Patch frequent LLM hallucination where essay answers are outputted as a list array
                 if "answer" in q and isinstance(q["answer"], list):
                     q["answer"] = ", ".join([str(a) for a in q["answer"]])
-                    
+
                 # Validate schema natively to ensure pipeline count matches final API count
                 QuestionResponse(**q)
                 valid_data.append(q)
             except Exception as e:
-                logger.warning(f"Discarding improperly formatted question JSON during parse: {e}")
+                logger.warning(
+                    f"Discarding improperly formatted question JSON during parse: {e}"
+                )
                 continue
 
         return valid_data
