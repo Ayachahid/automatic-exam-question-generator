@@ -31,3 +31,6 @@ GEMINI.md
 .history/
 
 .qwen/
+
+.ruff_cache/
+.pytest_cache/

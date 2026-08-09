@@ -1,4 +1,5 @@
 import yaml
+import os
 from dataclasses import dataclass
 from typing import Optional
 from src.core.logger import get_logger
@@ -10,7 +11,8 @@ logger = get_logger("core.config")
 class ModelConfig:
     provider: str
     name: str
-    base_url: str
+    base_url: Optional[str] = None
+    api_key: Optional[str] = None
 
 
 @dataclass
@@ -40,13 +42,21 @@ class AppConfig:
     generation: GenerationConfig
 
 
+
+
 def load_config(path: str = "configs/config.yaml") -> AppConfig:
     logger.info(f"Loading config from: {path}")
     with open(path, "r") as f:
         raw = yaml.safe_load(f)
 
+    model_raw = raw["model"]
+    if model_raw.get("provider") == "groq":
+        model_raw["api_key"] = os.environ.get("GROQ_API_KEY")
+        if not model_raw["api_key"]:
+            raise ValueError("GROQ_API_KEY environment variable is not set")
+
     config = AppConfig(
-        model=ModelConfig(**raw["model"]),
+        model=ModelConfig(**model_raw),
         chunker=ChunkerConfig(**raw["chunker"]),
         generation=GenerationConfig(**raw["generation"]),
     )

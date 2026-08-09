@@ -1,7 +1,6 @@
 model:
-  provider: ollama
-  name: qwen2.5:3b # qwen3:4b # qwen2.5:3b # llama3.2:1b 
-  base_url: http://localhost:11434
+  provider: groq
+  name: llama-3.1-8b-instant
 
 chunker:
   strategy: fixed_size  # Options: fixed_size, sentence, semantic

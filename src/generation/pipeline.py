@@ -37,6 +37,7 @@ class QuestionGenerationPipeline:
             provider_name=self.config.model.provider,
             base_url=self.config.model.base_url,
             model=self.config.model.name,
+            api_key=self.config.model.api_key,
         )
         self.file_path = file_path
 
@@ -75,7 +76,7 @@ class QuestionGenerationPipeline:
         import math
 
         num_chunks = len(chunks)
-            
+
         def process_chunk(task_data):
             idx, chunk_text, num_q = task_data
             logger.info(f"Processing chunk {idx+1}/{num_chunks} for {num_q} questions")
@@ -98,28 +99,32 @@ class QuestionGenerationPipeline:
 
         max_retries = 2
         retry_count = 0
-        
+
         while len(all_parsed_questions) < num_questions and retry_count <= max_retries:
             needed = num_questions - len(all_parsed_questions)
             active_chunks_count = min(num_chunks, needed)
-            
+
             # Distribute EXACTLY the remaining needed questions across chunks
             questions_per_chunk = math.ceil(needed / active_chunks_count)
-            
+
             tasks = []
             for i in range(active_chunks_count):
                 tasks.append((i, chunks[i], questions_per_chunk))
-                
-            with concurrent.futures.ThreadPoolExecutor(max_workers=min(5, len(tasks))) as executor:
+
+            with concurrent.futures.ThreadPoolExecutor(
+                max_workers=min(5, len(tasks))
+            ) as executor:
                 # Map tasks directly so they run concurrently
                 results = executor.map(process_chunk, tasks)
-                
+
                 for parsed_questions in results:
                     all_parsed_questions.extend(parsed_questions)
-                    
+
             if len(all_parsed_questions) < num_questions:
-                logger.warning(f"Fell short. Have {len(all_parsed_questions)}/{num_questions}. Generating missing...")
-            
+                logger.warning(
+                    f"Fell short. Have {len(all_parsed_questions)}/{num_questions}. Generating missing..."
+                )
+
             retry_count += 1
 
         logger.info(
